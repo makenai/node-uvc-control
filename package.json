@@ -1,0 +1,27 @@
+{
+  "name": "uvc-control",
+  "version": "1.0.0",
+  "description": "Control UVC compliant webcams from node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/makenai/node-uvc-control.git"
+  },
+  "keywords": [
+    "webcam",
+    "uvc",
+    "quickcam",
+    "logitech",
+    "lifecam",
+    "usb"
+  ],
+  "author": "Pawel Szymczykowski <makenai@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/makenai/node-uvc-control/issues"
+  },
+  "homepage": "https://github.com/makenai/node-uvc-control#readme"
+}
