@@ -138,7 +138,7 @@ var pan = 34;
 var tilt = 27;
 var buffer = new Buffer(8);
 buffer.writeIntLE(pan, 0,4);
-buffer.writeIntLE(pan, 4,4);
+buffer.writeIntLE(tilt, 4,4);
 camera.setRaw('absolutePanTilt', buffer, function(error) {
 	if (error) return console.log(error);
 	console.log('Saturation set!');
