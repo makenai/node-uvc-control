@@ -16,12 +16,16 @@
     "quickcam",
     "logitech",
     "lifecam",
-    "usb"
+    "usb",
+    "c920"
   ],
   "author": "Pawel Szymczykowski <makenai@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/makenai/node-uvc-control/issues"
   },
-  "homepage": "https://github.com/makenai/node-uvc-control#readme"
+  "homepage": "https://github.com/makenai/node-uvc-control#readme",
+  "dependencies": {
+    "usb": "^1.1.2"
+  }
 }
