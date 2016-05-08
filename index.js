@@ -118,8 +118,8 @@ UVCControl.controls = Object.keys( Controls );
 
 UVCControl.prototype.init = function() {
   this.device = usb.findByIds( this.vid, this.pid );
-  this.device.open();
   if (this.device) {
+    this.device.open();
     this.interfaceNumber = detectVideoControlInterface( this.device );
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "uvc-control",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Control UVC compliant webcams from node",
   "main": "index.js",
   "scripts": {
