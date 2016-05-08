@@ -185,7 +185,7 @@ UVCControl.prototype.get = function(id, callback) {
  */
 UVCControl.prototype.set = function(id, value, callback) {
   this.getControlParams(id, function(error, params) {
-    if (error) callback(error);
+    if (error) return callback(error);
     var data = new Buffer(params.wLength);
     data.writeIntLE(value, 0, params.wLength);
     this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, data, callback);
@@ -200,7 +200,7 @@ UVCControl.prototype.set = function(id, value, callback) {
  */
 UVCControl.prototype.setRaw = function(id, value, callback) {
   this.getControlParams(id, function(error, params) {
-    if (error) callback(error);
+    if (error) return callback(error);
     this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, value, callback);
   }.bind(this));
 }
