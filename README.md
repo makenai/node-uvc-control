@@ -121,13 +121,6 @@ camera.set('saturation', 100, function(error) {
 });
 ```
 
-`autoExposurePriority` is a bitmask and expects one of the following values:
-
-* manual: `0b00000001`
-* auto: `0b00000010`
-* shutter priority: `0b00000100`
-* apeture priority: `0b00001000`
-
 ### camera.setRaw( controlName, buffer, callback )
 
 Some controls do not except numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
@@ -156,9 +149,26 @@ camera.close();
 ## Currently Supported Controls
 
 * autoExposureMode
+
+    `autoExposureMode` determines whether the device will provide automatic adjustment of the exposure time and iris controls. The expected value is a bitmask:
+
+        * manual: `0b00000001` (1)
+        * auto: `0b00000010` (2)
+        * shutter priority: `0b00000100` (3)
+        * aperture priority: `0b00001000` (4)
+
 * autoExposurePriority
+ 
+    `autoExposurePriority` is used to specify constraints on the `absoluteExposureTime` when `autoExposureMode` is set to `auto` or `shutter priority`. A value of `0` means that the frame rate must remain constant. A value of `1` means that the frame rate may be dynamically varied by the device.
+
 * absoluteExposureTime
+
+    `absoluteExposureTime` is used to specify the length of exposure. This value is expressed in 100µs units, where 1 is 1/10,000th of a second, 10,000 is 1 second, and 100,000 is 10 seconds. 
+
 * absoluteFocus
+
+    `absoluteFocus` is used to specify the distance, in millimiters to the focused target.
+
 * absoluteZoom
 * absolutePanTilt
 * autoFocus
