@@ -154,8 +154,8 @@ camera.close();
 
         * manual: `0b00000001` (1)
         * auto: `0b00000010` (2)
-        * shutter priority: `0b00000100` (3)
-        * aperture priority: `0b00001000` (4)
+        * shutter priority: `0b00000100` (4)
+        * aperture priority: `0b00001000` (8)
 
 * autoExposurePriority
  
