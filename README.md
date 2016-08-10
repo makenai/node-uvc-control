@@ -120,13 +120,17 @@ camera.set('saturation', 100, function(error) {
 	console.log('Saturation set!');
 });
 ```
+#### autoExposureMode
+`autoExposureMode` is a bitmask and expects one of the following values:
 
-`autoExposurePriority` is a bitmask and expects one of the following values:
+* manual: `0b00000001` (1)
+* auto: `0b00000010` (2)
+* shutter priority: `0b00000100` (4)
+* aperture priority: `0b00001000` (8)
 
-* manual: `0b00000001`
-* auto: `0b00000010`
-* shutter priority: `0b00000100`
-* apeture priority: `0b00001000`
+#### autoExposurePriority
+
+`autoExposurePriority` is used to specify constraints on `absoluteExposureTime` when `autoExposureMode` is set to `auto` or `shutter priority`. A value of 0 means that the frame rate must remain constant. A value of 1 indicates that the frame rate may be dynamically varied by the device.
 
 ### camera.setRaw( controlName, buffer, callback )
 
