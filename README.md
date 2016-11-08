@@ -112,7 +112,7 @@ camera.range('absoluteFocus', function(error, range) {
 
 ### camera.set( controlName, value, callback )
 
-Get the current value of the specified control by name.
+Set the value of the specified control by name.
 
 ```javascript
 camera.set('saturation', 100, function(error) {
@@ -130,7 +130,7 @@ camera.set('saturation', 100, function(error) {
 
 ### camera.setRaw( controlName, buffer, callback )
 
-Some controls do not except numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
+Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
 
 
 ```javascript
