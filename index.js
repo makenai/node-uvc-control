@@ -120,7 +120,10 @@ UVCControl.prototype.init = function() {
   var devices = usb.getDeviceList();
   for (var i=0;i<devices.length;i++) {
     if(this.options['deviceAddress'] === devices[i].deviceAddress) {
-      this.device = devices[i];
+      var descr = devices[i].deviceDescriptor;
+      if((this.vid === descr.idVendor) && (this.pid === descr.idProduct)) {
+        this.device = devices[i];
+      }
     }
   }
   if (!this.device) {
