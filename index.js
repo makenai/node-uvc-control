@@ -116,25 +116,38 @@ UVCControl.controls = Object.keys( Controls );
 
 UVCControl.prototype.init = function() {
 
-  if(!this.options.vid && !this.options.pid){
+  if(this.options.vid && this.options.pid && this.options.deviceAddress){
+
+    // find cam with vid / pid / deviceAddress
+    this.device = usb.getDeviceList().filter(function(device){
+      return device.deviceDescriptor.idVendor === this.options.vid && 
+              device.deviceDescriptor.idProduct === this.options.pid &&
+              device.deviceAddress === this.options.deviceAddress;
+    }.bind(this))[0];
+
+  }else if(this.options.vid && this.options.pid){
     
-    // use the first camera in the device list
+    // find a camera that matches the vid / pid
+    this.device = usb.getDeviceList().filter(function(device){
+      return device.deviceDescriptor.idVendor === this.options.vid && 
+              device.deviceDescriptor.idProduct === this.options.pid;
+    }.bind(this))[0];
+
+  }else if(this.options.vid){
+
+    // find a camera that matches the vendor id
+    this.device = usb.getDeviceList().filter(function(device){
+      return device.deviceDescriptor.idVendor === this.options.vid;
+    }.bind(this))[0];
+
+  }else{
+
+    // no options... use the first camera in the device list
     this.device = usb.getDeviceList().filter(function(device){
       // http://www.usb.org/developers/defined_class/#BaseClass10h
       return device.deviceDescriptor.bDeviceClass === 239 && 
-        device.deviceDescriptor.bDeviceSubClass === 2
-    })[0]
-
-  }else if(this.options.vid){
-    
-    // find a camera that matches the vendor id
-    this.device = usb.getDeviceList().filter(function(device){
-      return device.deviceDescriptor.idVendor
-    })[0]
-
-  }else{
-    // find device matching vid/pid pair
-    this.device = usb.findByIds( this.options.vid, this.options.pid );
+              device.deviceDescriptor.bDeviceSubClass === 2;
+    })[0];
   }
 
   if (this.device) {
