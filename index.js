@@ -120,7 +120,8 @@ UVCControl.prototype.init = function() {
 
     // find cam with vid / pid / deviceAddress
     this.device = usb.getDeviceList().filter(function(device){
-      return device.deviceDescriptor.idVendor === this.options.vid && 
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid && 
               device.deviceDescriptor.idProduct === this.options.pid &&
               device.deviceAddress === this.options.deviceAddress;
     }.bind(this))[0];
@@ -129,7 +130,8 @@ UVCControl.prototype.init = function() {
     
     // find a camera that matches the vid / pid
     this.device = usb.getDeviceList().filter(function(device){
-      return device.deviceDescriptor.idVendor === this.options.vid && 
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid && 
               device.deviceDescriptor.idProduct === this.options.pid;
     }.bind(this))[0];
 
@@ -137,7 +139,8 @@ UVCControl.prototype.init = function() {
 
     // find a camera that matches the vendor id
     this.device = usb.getDeviceList().filter(function(device){
-      return device.deviceDescriptor.idVendor === this.options.vid;
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid;
     }.bind(this))[0];
 
   }else{
@@ -145,8 +148,7 @@ UVCControl.prototype.init = function() {
     // no options... use the first camera in the device list
     this.device = usb.getDeviceList().filter(function(device){
       // http://www.usb.org/developers/defined_class/#BaseClass10h
-      return device.deviceDescriptor.bDeviceClass === 239 && 
-              device.deviceDescriptor.bDeviceSubClass === 2;
+      return isWebcam(device);
     })[0];
   }
 
@@ -271,4 +273,14 @@ function detectVideoControlInterface(device) {
       return i;
     }
   }
+}
+
+/**
+ * Check the device class / subclass and assert that it is a webcam
+ * @param  {object} device
+ * @return {Boolean}
+ */
+function isWebcam(device){
+  return device.deviceDescriptor.bDeviceClass === 239 && 
+          device.deviceDescriptor.bDeviceSubClass === 2
 }
