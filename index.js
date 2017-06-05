@@ -117,7 +117,18 @@ module.exports = UVCControl;
 UVCControl.controls = Object.keys( Controls );
 
 UVCControl.prototype.init = function() {
-  this.device = usb.findByIds( this.vid, this.pid );
+  var devices = usb.getDeviceList();
+  for (var i=0;i<devices.length;i++) {
+    if(this.options['deviceAddress'] === devices[i].deviceAddress) {
+      var descr = devices[i].deviceDescriptor;
+      if((this.vid === descr.idVendor) && (this.pid === descr.idProduct)) {
+        this.device = devices[i];
+      }
+    }
+  }
+  if (!this.device) {
+    this.device = usb.findByIds( this.vid, this.pid );
+  }
   if (this.device) {
     this.device.open();
     this.interfaceNumber = detectVideoControlInterface( this.device );
