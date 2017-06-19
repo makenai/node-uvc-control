@@ -177,6 +177,16 @@ UVCControl.prototype.get = function(id, callback) {
   }.bind(this));
 }
 
+UVCControl.prototype.getRaw = function(id, callback) {
+  this.getControlParams(id, function(error, params) {
+    if (error) return callback(error);
+    this.device.controlTransfer(0b10100001, UVC_GET_CUR, params.wValue, params.wIndex, params.wLength, function(error,buffer) {
+      if (error) return callback(error);
+      callback(null, buffer);
+    });
+  }.bind(this));
+}
+
 /**
  * Set the value of a control
  * @param  {string}   controlId
