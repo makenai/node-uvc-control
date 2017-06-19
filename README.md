@@ -1,4 +1,4 @@
-#uvc-control
+# uvc-control
 
 Control a USB Video Class compliant webcam from node. Most modern USB webcams use a common set of controls standardized by the USB Implementers Forum. You can use this set of controls to change certain things on the camera, such as the brightness, contrast, zoom level, focus and so on.
 
@@ -34,7 +34,11 @@ BRCM20702 Hub [ vid: 0xa5c  / pid: 0x4500  ]
 
 ## Installation
 
-Libusb is included as a submodule. On Linux, you'll need libudev to build libusb. On Ubuntu/Debian: `sudo apt-get install build-essential libudev-dev`
+Libusb is included as a submodule.
+
+On Linux, you'll need libudev to build libusb. On Ubuntu/Debian: `sudo apt-get install build-essential libudev-dev`
+
+On Windows, use [Zadig](https://sourceforge.net/projects/libwdi/files/zadig/) to install the WinUSB driver.
 
 Then, just run
 
