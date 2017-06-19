@@ -147,7 +147,6 @@ UVCControl.prototype.init = function() {
 
     // no options... use the first camera in the device list
     this.device = usb.getDeviceList().filter(function(device){
-      // http://www.usb.org/developers/defined_class/#BaseClass10h
       return isWebcam(device);
     })[0];
   }
@@ -258,6 +257,39 @@ UVCControl.prototype.range = function(id, callback) {
 }
 
 /**
+ * Discover uvc devices
+ */
+UVCControl.discover = function(){
+  var promises = usb.getDeviceList().map(UVCControl.validate)
+  Promise.all(promises).then(results => {
+    resolve(results.filter(w => w)) // rm nulls
+  })
+}
+
+
+/**
+ * Check if device is a uvc device
+ * @param  {object} device
+ */
+UVCControl.validate = device => { return new Promise((resolve, reject) => {
+
+  if (device.deviceDescriptor.iProduct) {
+    device.open()
+    
+    // http://www.usb.org/developers/defined_class/#BaseClass10h
+    if(isWebcam(device)){
+      device.getStringDescriptor(device.deviceDescriptor.iProduct, function(error, deviceName){
+        if(error) throw error
+        device.close()
+        device.name = deviceName
+        resolve(device)
+      })      
+    } else resolve(false)
+  } else resolve(false)
+})}
+
+
+/**
  * Given a USB device, iterate through all of the exposed interfaces looking for
  * the one for VideoControl. bInterfaceClass = CC_VIDEO (0x0e) and
  * bInterfaceSubClass = SC_VIDEOCONTROL (0x01)
@@ -281,6 +313,7 @@ function detectVideoControlInterface(device) {
  * @return {Boolean}
  */
 function isWebcam(device){
+  // http://www.usb.org/developers/defined_class/#BaseClass10h
   return device.deviceDescriptor.bDeviceClass === 239 && 
           device.deviceDescriptor.bDeviceSubClass === 2
 }
