@@ -1,4 +1,4 @@
-#uvc-control
+# uvc-control
 
 Control a USB Video Class compliant webcam from node. Most modern USB webcams use a common set of controls standardized by the USB Implementers Forum. You can use this set of controls to change certain things on the camera, such as the brightness, contrast, zoom level, focus and so on.
 
@@ -34,7 +34,11 @@ BRCM20702 Hub [ vid: 0xa5c  / pid: 0x4500  ]
 
 ## Installation
 
-Libusb is included as a submodule. On Linux, you'll need libudev to build libusb. On Ubuntu/Debian: `sudo apt-get install build-essential libudev-dev`
+Libusb is included as a submodule.
+
+On Linux, you'll need libudev to build libusb. On Ubuntu/Debian: `sudo apt-get install build-essential libudev-dev`
+
+On Windows, use [Zadig](https://sourceforge.net/projects/libwdi/files/zadig/) to install the WinUSB driver.
 
 Then, just run
 
@@ -112,7 +116,7 @@ camera.range('absoluteFocus', function(error, range) {
 
 ### camera.set( controlName, value, callback )
 
-Get the current value of the specified control by name.
+Set the value of the specified control by name.
 
 ```javascript
 camera.set('saturation', 100, function(error) {
@@ -121,16 +125,9 @@ camera.set('saturation', 100, function(error) {
 });
 ```
 
-`autoExposurePriority` is a bitmask and expects one of the following values:
-
-* manual: `0b00000001`
-* auto: `0b00000010`
-* shutter priority: `0b00000100`
-* apeture priority: `0b00001000`
-
 ### camera.setRaw( controlName, buffer, callback )
 
-Some controls do not except numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
+Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
 
 
 ```javascript
@@ -156,9 +153,26 @@ camera.close();
 ## Currently Supported Controls
 
 * autoExposureMode
+
+    `autoExposureMode` determines whether the device will provide automatic adjustment of the exposure time and iris controls. The expected value is a bitmask:
+
+        * manual: `0b00000001` (1)
+        * auto: `0b00000010` (2)
+        * shutter priority: `0b00000100` (4)
+        * aperture priority: `0b00001000` (8)
+
 * autoExposurePriority
+ 
+    `autoExposurePriority` is used to specify constraints on the `absoluteExposureTime` when `autoExposureMode` is set to `auto` or `shutter priority`. A value of `0` means that the frame rate must remain constant. A value of `1` means that the frame rate may be dynamically varied by the device.
+
 * absoluteExposureTime
+
+    `absoluteExposureTime` is used to specify the length of exposure. This value is expressed in 100µs units, where 1 is 1/10,000th of a second, 10,000 is 1 second, and 100,000 is 10 seconds. 
+
 * absoluteFocus
+
+    `absoluteFocus` is used to specify the distance, in millimiters to the focused target.
+
 * absoluteZoom
 * absolutePanTilt
 * autoFocus
