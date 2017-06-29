@@ -102,10 +102,8 @@ var Controls = {
   }
 };
 
-function UVCControl(vid, pid, options) {
-  this.vid = vid;
-  this.pid = pid;
-  this.options = options || {};
+function UVCControl(options = {}) {
+  this.options = options;
   this.init();
 }
 module.exports = UVCControl;
@@ -117,7 +115,43 @@ module.exports = UVCControl;
 UVCControl.controls = Object.keys( Controls );
 
 UVCControl.prototype.init = function() {
-  this.device = usb.findByIds( this.vid, this.pid );
+
+  if(this.options.vid && this.options.pid && this.options.deviceAddress){
+
+    // find cam with vid / pid / deviceAddress
+    this.device = usb.getDeviceList().filter(function(device){
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid && 
+              device.deviceDescriptor.idProduct === this.options.pid &&
+              device.deviceAddress === this.options.deviceAddress;
+    }.bind(this))[0];
+
+  }else if(this.options.vid && this.options.pid){
+    
+    // find a camera that matches the vid / pid
+    this.device = usb.getDeviceList().filter(function(device){
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid && 
+              device.deviceDescriptor.idProduct === this.options.pid;
+    }.bind(this))[0];
+
+  }else if(this.options.vid){
+
+    // find a camera that matches the vendor id
+    this.device = usb.getDeviceList().filter(function(device){
+      return isWebcam(device) &&
+              device.deviceDescriptor.idVendor === this.options.vid;
+    }.bind(this))[0];
+
+  }else{
+
+    // no options... use the first camera in the device list
+    this.device = usb.getDeviceList().filter(function(device){
+      // http://www.usb.org/developers/defined_class/#BaseClass10h
+      return isWebcam(device);
+    })[0];
+  }
+
   if (this.device) {
     this.device.open();
     this.interfaceNumber = detectVideoControlInterface( this.device );
@@ -136,7 +170,7 @@ UVCControl.prototype.getUnitOverride = function(unit) {
 
 UVCControl.prototype.getControlParams = function(id, callback) {
   if (!this.device) {
-    return callback(new Error('USB device not found with vid 0x' + this.vid.toString(16) + ', pid 0x' + this.pid.toString(16) ));
+    return callback(new Error('USB device not found with vid 0x' + this.options.vid.toString(16) + ', pid 0x' + this.options.pid.toString(16) ));
   }
   if (this.interfaceNumber === undefined) {
     return callback(new Error('UVC compliant device not found.'));
@@ -239,4 +273,14 @@ function detectVideoControlInterface(device) {
       return i;
     }
   }
+}
+
+/**
+ * Check the device class / subclass and assert that it is a webcam
+ * @param  {object} device
+ * @return {Boolean}
+ */
+function isWebcam(device){
+  return device.deviceDescriptor.bDeviceClass === 239 && 
+          device.deviceDescriptor.bDeviceSubClass === 2
 }
