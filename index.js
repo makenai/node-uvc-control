@@ -259,12 +259,12 @@ UVCControl.prototype.range = function(id, callback) {
 /**
  * Discover uvc devices
  */
-UVCControl.discover = function(){
+UVCControl.discover = function(){ return new Promise((resolve, reject) => {
   var promises = usb.getDeviceList().map(UVCControl.validate)
   Promise.all(promises).then(results => {
     resolve(results.filter(w => w)) // rm nulls
   })
-}
+})}
 
 
 /**
