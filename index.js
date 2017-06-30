@@ -260,10 +260,10 @@ UVCControl.prototype.range = function(id, callback) {
  * Discover uvc devices
  */
 UVCControl.discover = function(){ return new Promise((resolve, reject) => {
-  var promises = usb.getDeviceList().map(UVCControl.validate)
+  var promises = usb.getDeviceList().map(UVCControl.validate);
   Promise.all(promises).then(results => {
-    resolve(results.filter(w => w)) // rm nulls
-  })
+    resolve(results.filter(w => w)); // rm nulls
+  });
 })}
 
 
@@ -274,18 +274,18 @@ UVCControl.discover = function(){ return new Promise((resolve, reject) => {
 UVCControl.validate = device => { return new Promise((resolve, reject) => {
 
   if (device.deviceDescriptor.iProduct) {
-    device.open()
+    device.open();
     
     // http://www.usb.org/developers/defined_class/#BaseClass10h
     if(isWebcam(device)){
       device.getStringDescriptor(device.deviceDescriptor.iProduct, function(error, deviceName){
-        if(error) throw error
-        device.close()
-        device.name = deviceName
-        resolve(device)
-      })      
-    } else resolve(false)
-  } else resolve(false)
+        if(error) throw error;
+        device.close();
+        device.name = deviceName;
+        resolve(device);
+      });
+    } else resolve(false);
+  } else resolve(false);
 })}
 
 
@@ -315,5 +315,5 @@ function detectVideoControlInterface(device) {
 function isWebcam(device){
   // http://www.usb.org/developers/defined_class/#BaseClass10h
   return device.deviceDescriptor.bDeviceClass === 239 && 
-          device.deviceDescriptor.bDeviceSubClass === 2
+          device.deviceDescriptor.bDeviceSubClass === 2;
 }
