@@ -52,6 +52,11 @@ var Controls = {
     selector: 0x0D,
     size: 8 // dwPanAbsolute (4 bytes) + dwTiltAbsolute (4 bytes)
   },
+  relativePanTilt: {
+    unit: UVC_INPUT_TERMINAL_ID,
+    selector: 0x0E,
+    size: 4 // bPanRelative, bPanSpeed, bTiltRelative, bTiltSpeed
+  },
   autoFocus: {
     unit: UVC_INPUT_TERMINAL_ID,
     selector: 0x08,

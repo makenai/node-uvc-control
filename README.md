@@ -127,7 +127,7 @@ camera.set('saturation', 100, function(error) {
 
 ### camera.setRaw( controlName, buffer, callback )
 
-Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
+Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd ones so far are `absolutePanTilt`, which expects a buffer of two 4 byte numbers, and `relativePanTilt` which expects four single-byte numbers:
 
 
 ```javascript
@@ -139,6 +139,20 @@ buffer.writeIntLE(tilt, 4,4);
 camera.setRaw('absolutePanTilt', buffer, function(error) {
 	if (error) return console.log(error);
 	console.log('Saturation set!');
+});
+
+var panDirection = 0xFF; // 0 = stop, 1 = clockwise, 0xFF = counter-clockwise
+var panSpeed = 1; // lower is slower
+var tiltDirection = 0; // 0 = stop, 1 = up, 0xFF = down
+var tiltSpeed = 0; // lower is slower
+var buffer = new Buffer(4);
+buffer.writeInt8(panDirection, 0, 1);
+buffer.writeInt8(panSpeed, 1, 1);
+buffer.writeInt8(tiltDirection, 2, 1);
+buffer.writeInt8(tiltSpeed, 3,1);
+camera.setRaw('relativePanTilt', buffer, function(error) {
+	if (error) return console.log(error);
+	console.log('Pan/tilt set!');
 });
 ```
 
