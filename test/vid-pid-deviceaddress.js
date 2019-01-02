@@ -4,14 +4,19 @@
 	Get a device based on vendor ID, product ID, and device address. 
 	Useful if using multiple of the same webcam
   These values can be found by running ./discover.js
+  
+  Usage: ./test/vid-pid-deviceaddress.js 1133 2142 25
 */
 
 const UVCControl = require('../index');
+const vid = parseInt(process.argv[2]) || 1133
+const pid = parseInt(process.argv[3]) || 2142
+const deviceAddress = parseInt(process.argv[4]) || 25
 
 const cam = new UVCControl({
-	vid: 1133,
-	pid: 2142,
-	deviceAddress: 25
+	vid: vid,
+	pid: pid,
+	deviceAddress: deviceAddress
 });
 
 UVCControl.controls.map(name => {
