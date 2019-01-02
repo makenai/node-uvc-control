@@ -19,6 +19,12 @@ const cam = new UVCControl({
 	deviceAddress: deviceAddress
 });
 
+if(cam.device.deviceDescriptor.idVendor !== vid) console.error(`Input vendor ID (${vid}) does not match device vendor ID (${cam.device.deviceDescriptor.idVendor})`);
+if(cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product ID (${pid}) does not match device vendor ID (${cam.device.deviceDescriptor.idProduct})`);
+if(cam.deviceAddress !== deviceAddress) console.error(`Input device address (${deviceAddress}) does not match device address (${cam.deviceAddress})`);
+
+console.log(cam);
+
 UVCControl.controls.map(name => {
 	cam.get(name, (err, val) => {
 		if(err) throw err;
