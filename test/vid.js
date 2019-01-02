@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
+/*
+  Get a device based on vendor ID
+  These values can be found by running ./discover.js
+*/
+
 const UVCControl = require('../index');
 
-var cam = new UVCControl({
+const cam = new UVCControl({
 	vid: 1133
 });
 
