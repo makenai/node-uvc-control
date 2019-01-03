@@ -17,11 +17,11 @@ var Controls = {
   // ==============
   // Input Terminal
   // ==============
-  autoExposureMode: { // TODO - needs constants
-    // D0: Manual Mode – manual Exposure Time, manual Iris
-    // D1: Auto Mode – auto Exposure Time, auto Iris
-    // D2: Shutter Priority Mode – manual Exposure Time, auto Iris
-    // D3: Aperture Priority Mode – auto Exposure Time, manual Iris
+  autoExposureMode: {
+    // D0: UVCControl.EXPOSURE_MANUAL - Manual Mode – manual Exposure Time, manual Iris
+    // D1: UVCControl.EXPOSURE_AUTO - Auto Mode – auto Exposure Time, auto Iris
+    // D2: UVCControl.EXPOSURE_PRIORITY_SHUTTER - Shutter Priority Mode – manual Exposure Time, auto Iris
+    // D3: UVCControl.EXPOSURE_PRIORITY_APERTURE - Aperture Priority Mode – auto Exposure Time, manual Iris
     // D4..D7: Reserved, set to zero.
     unit: UVC_INPUT_TERMINAL_ID,
     selector: 0x02,
@@ -106,6 +106,12 @@ function UVCControl(options = {}) {
   this.options = options;
   this.init();
 }
+
+UVCControl.EXPOSURE_MANUAL = 0b00000001
+UVCControl.EXPOSURE_AUTO = 0b00000010
+UVCControl.EXPOSURE_PRIORITY_SHUTTER = 0b00000100
+UVCControl.EXPOSURE_PRIORITY_APERTURE = 0b00001000
+
 module.exports = UVCControl;
 
 /**
