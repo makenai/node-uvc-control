@@ -4,8 +4,6 @@ const UVC_SET_CUR = 0x01
 const UVC_GET_CUR = 0x81
 const UVC_GET_MIN = 0x82
 const UVC_GET_MAX = 0x83
-const UVC_INPUT_TERMINAL_ID = 0x01
-const UVC_PROCESSING_UNIT_ID = 0x03
 
 // See USB Device Class Definition for Video Devices Revision 1.1
 // http://www.usb.org/developers/docs/devclass_docs/
@@ -23,37 +21,37 @@ const Controls = {
     // D2: UVCControl.EXPOSURE_PRIORITY_SHUTTER - Shutter Priority Mode – manual Exposure Time, auto Iris
     // D3: UVCControl.EXPOSURE_PRIORITY_APERTURE - Aperture Priority Mode – auto Exposure Time, manual Iris
     // D4..D7: Reserved, set to zero.
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x02,
     size: 1
   },
   autoExposurePriority: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x03,
     size: 1
   },
   absoluteExposureTime: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x04,
     size: 4
   },
   absoluteFocus: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x06,
     size: 2
   },
   absoluteZoom: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x0B,
     size: 2
   },
   absolutePanTilt: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x0D,
     size: 8 // dwPanAbsolute (4 bytes) + dwTiltAbsolute (4 bytes)
   },
   autoFocus: {
-    unit: UVC_INPUT_TERMINAL_ID,
+    type: 'inputTerminal',
     selector: 0x08,
     size: 1
   },
@@ -61,42 +59,42 @@ const Controls = {
   // Processing Unit
   // ===============
   brightness: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x02,
     size: 2
   },
   contrast: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x03,
     size: 2
   },
   saturation: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x07,
     size: 2
   },
   sharpness: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x08,
     size: 2
   },
   whiteBalanceTemperature: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x0A,
     size: 2
   },
   backlightCompensation: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x01,
     size: 2
   },
   gain: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x04,
     size: 2
   },
   autoWhiteBalance: {
-    unit: UVC_PROCESSING_UNIT_ID,
+    type: 'processingUnit',
     selector: 0x0B,
     size: 1
   }
@@ -107,6 +105,11 @@ class UVCControl {
   constructor(options = {}) {
     this.options = options
     this.init()
+    const descriptors = getInterfaceDescriptors(this.device)
+    this.ids = {
+      processingUnit: descriptors.processingUnit.id,
+      inputTerminal: descriptors.inputTerminal.id,
+    }
   }
 
   init() {
@@ -152,16 +155,6 @@ class UVCControl {
     }
   }
 
-  getUnitOverride(unit) {
-    if (unit == UVC_INPUT_TERMINAL_ID && this.options.inputTerminalId) {
-      return this.options.inputTerminalId
-    }
-    if (unit == UVC_PROCESSING_UNIT_ID && this.options.processingUnitId) {
-      return this.options.processingUnitId
-    }
-    return unit
-  }
-
   getControlParams(id) {
     if (!this.device) {
       throw Error('USB device not found with vid 0x' + this.options.vid.toString(16) + ', pid 0x' + this.options.pid.toString(16))
@@ -174,7 +167,7 @@ class UVCControl {
       throw Error('UVC Control identifier not recognized: ' + id)
     }
 
-    var unit = this.getUnitOverride(control.unit)
+    var unit = this.ids[control.type]
     var params = {
       wValue: (control.selector << 8) | 0x00,
       wIndex: (unit << 8) | this.interfaceNumber,
@@ -351,6 +344,46 @@ function writeInt(buffer, value, length) {
     return buffer.writeIntLE(value, low) + buffer.writeUIntLE(value, high, 4)
   } else {
     return buffer.writeIntLE(value, 0, length)
+  }
+}
+
+function getInterfaceDescriptors(device) {
+  // find the VC interface
+  // VC Interface Descriptor is a concatenation of all the descriptors that are used to fully describe
+  // the video function, i.e., all Unit Descriptors (UDs) and Terminal Descriptors (TDs)
+  const vcInterface = device.interfaces.filter(interface => {
+    const {
+      descriptor
+    } = interface
+    return descriptor.bInterfaceNumber === 0x00 &&
+      descriptor.bInterfaceClass === 0x0e &&
+      descriptor.bInterfaceSubClass === 0x01
+  })[0]
+
+  // parse the descriptors in the extra field
+  let data = vcInterface.descriptor.extra.toJSON().data
+  let descriptorArrays = []
+  while (data.length) {
+    let bLength = data[0]
+    let arr = data.splice(0, bLength)
+    descriptorArrays.push(arr)
+  }
+
+  // find the processing unit descriptor
+  const pUD = descriptorArrays.filter(arr => arr[0] === 0x0B && arr[1] === 0x24 && arr[2] === 0x05)[0]
+  const processingUnit = {
+    id: pUD[3]
+  }
+
+  // find input terminal descriptor
+  const iTD = descriptorArrays.filter(arr => arr[0] === 0x12 && arr[1] === 0x24 && arr[2] === 0x02)[0]
+  const inputTerminal = {
+    id: iTD[3]
+  }
+
+  return {
+    processingUnit,
+    inputTerminal,
   }
 }
 
