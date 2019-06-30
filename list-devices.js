@@ -1,14 +1,22 @@
-var usb = require('usb');
+#!/usr/bin/env node
 
-var devices = usb.getDeviceList();
-devices.forEach(function(device) {
-  var vendorId = device.deviceDescriptor.idVendor;
-  var productId = device.deviceDescriptor.idProduct;
+const usb = require('usb')
+
+const devices = usb.getDeviceList()
+devices.forEach((device) => {
+  const vendorId = device.deviceDescriptor.idVendor
+  const productId = device.deviceDescriptor.idProduct
   if (device.deviceDescriptor.iProduct) {
-    device.open();
-    var name = device.getStringDescriptor(device.deviceDescriptor.iProduct, function(error,product) {
-      console.log( product, '[ vId: 0x'+vendorId.toString(16), ' / pId: 0x'+productId.toString(16), ' ]');
-      device.close();
-    });
+    device.open()
+    const name = device.getStringDescriptor(device.deviceDescriptor.iProduct, (error, product) => {
+      if (error) return console.error(error)
+      // console.log(device)
+      console.log(product, {
+        vendorId: '0x' + vendorId.toString(16),
+        productId: '0x' + productId.toString(16),
+        deviceAddress: '0x' + device.deviceAddress.toString(16),
+      })
+      device.close()
+    })
   }
-});
+})

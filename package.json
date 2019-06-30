@@ -1,6 +1,6 @@
 {
   "name": "uvc-control",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Control UVC compliant webcams from node",
   "main": "index.js",
   "scripts": {
@@ -32,6 +32,6 @@
     "usb": "^1.1.2"
   },
   "engines": {
-    "node": ">=4"
+    "node": ">=8"
   }
 }
