@@ -102,7 +102,7 @@ camera.range('absoluteFocus').then(range => {
 })
 ```
 
-### camera.set( controlName, value, callback )
+### camera.set( controlName, value )
 
 Set the value of the specified control by name.
 
@@ -110,10 +110,9 @@ Set the value of the specified control by name.
 camera.set('saturation', 100).then(val => console.log('Saturation set!'))
 ```
 
-### camera.setRaw( controlName, buffer, callback )
+### camera.setRaw( controlName, buffer )
 
 Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
-
 
 ```javascript
 const pan = 34
@@ -177,4 +176,4 @@ Pull requests and testers welcome!
 
 ### Credits
 
-Written by [Pawel Szymczykowski](http://twitter.com/makenai) and based on some Objective C examples by [Dominic Szablewski](https://twitter.com/phoboslab) found at [http://phoboslab.org/log/2009/07/uvc-camera-control-for-mac-os-x](http://phoboslab.org/log/2009/07/uvc-camera-control-for-mac-os-x).
+Written by [Pawel Szymczykowski](http://twitter.com/makenai) and based on some Objective C examples by [Dominic Szablewski](https://twitter.com/phoboslab) found at [http://phoboslab.org/log/2009/07/uvc-camera-control-for-mac-os-x](http://phoboslab.org/log/2009/07/uvc-camera-control-for-mac-os-x). Maintained by [Josh Beckwith](https://github.com/positlabs).
