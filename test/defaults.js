@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
-const UVCControl = require('../index');
+/*
+	List default values
+*/
 
-var cam = new UVCControl();
+const UVCControl = require('../index');
+const cam = new UVCControl();
 
 UVCControl.controls.map(name => {
 	cam.get(name, (err, val) => {
