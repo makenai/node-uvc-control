@@ -19,13 +19,18 @@ camera.set('brightness', 100).then(() => console.log('Brightness set!'))
 
 ## Finding Your vendorId / productId
 
-Every USB device has a vendorId and productId. You can use Device Manager (Windows), System Information (Mac) or lsusb (Linux) to find these, or you can use the list-devices.js in this repo to find the right paramters.
+Use list-devices.js to find the right paramters.
 
 ```
 $ node list-devices.js
-HD Pro Webcam C920 [ vid: 0x46d  / pid: 0x82d  ]
-Bluetooth USB Host Controller [ vid: 0x5ac  / pid: 0x828f  ]
-BRCM20702 Hub [ vid: 0xa5c  / pid: 0x4500  ]
+[ { name: 'Logitech BRIO',
+    vendorId: 1133,
+    productId: 2142,
+    deviceAddress: 7 },
+  { name: 'Microsoft® LifeCam Studio(TM)',
+    vendorId: 1118,
+    productId: 1906,
+    deviceAddress: 22 } ]
 ```
 
 ## Installation
@@ -58,31 +63,10 @@ UVCControl.controls.forEach(name => console.log(name))
 * **options** - object containing options
 * **options.vid** - numeric vendor id of your device (see above)
 * **options.pid** - numeric product id of your device (see above)
-* **options.inputTerminalId** - override input terminal id if not 0x01
-* **options.processingUnitId** - override processing unit id if not 0x03
 
 ```javaScript
 const camera = new UVCControl(options)
 ```
-
-#### Note on inputTerminalId / processingUnitId:
-
-These are values that should be able to be autodetected for a UVC compliant camera, but I'm not sure how to do this yet. Mine are 0x01 and 0x03, but I have seen it as 0x01 and 0x02 for the QuickCam 9000. If you get an error like `{ [Error: LIBUSB_TRANSFER_STALL] errno: 4 }` you may need to change this setting.
-
-```javascript
-// Set up QuickCam 9000
-const camera = new UVCControl({
-  vid: 0x046d,
-  pid: 0x082d,
-  processingUnitId: 0x02
-})
-```
-
-You can find out your setting by using something like `USB Prober` for OSX:
-
-![USB Prober](img/usbprobe.png)
-
-This should be a temporary workaround. Ideas for how to autodetect the proper id's are welcome!
 
 ### camera.get( controlName )
 
