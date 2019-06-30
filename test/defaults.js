@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
 /*
-	List default values
+  List default values
 */
 
-const UVCControl = require('../index');
-const cam = new UVCControl();
+const UVCControl = require('../index')
+const cam = new UVCControl()
 
 UVCControl.controls.map(name => {
-	cam.get(name, (err, val) => {
-		if(err) throw err;
-		console.log(name, val);
-	});
-});
+  cam.get(name)
+    .then(val => console.log(name, val))
+    .catch(err => console.error('failed!', name, err))
+})

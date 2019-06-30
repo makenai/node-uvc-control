@@ -5,22 +5,15 @@ Control a USB Video Class compliant webcam from node. Most modern USB webcams us
 ## Example
 
 ```javascript
-var UVCControl = require('uvc-control');
+const UVCControl = require('uvc-control')
 
 // get the first camera by default
-var camera = new UVCControl();
+const camera = new UVCControl()
 // or get a specific camera
-var camera = new UVCControl({vid: 0x046d, pid: 0x082d});
+const camera = new UVCControl({vid: 0x046d, pid: 0x082d})
 
-camera.get('autoFocus', function(error,value) {
-	console.log('AutoFocus setting:', value);
-});
-
-camera.set('brightness', 100, function(error) {
-	if (!error) {
-		console.log('Brightness Set OK!');
-	}
-});
+camera.get('autoFocus').then(value) => console.log('AutoFocus setting:', value))
+camera.set('brightness', 100).then(() => console.log('Brightness set!'))
 
 ```
 
@@ -43,27 +36,21 @@ On Linux, you'll need libudev to build libusb. On Ubuntu/Debian: `sudo apt-get i
 
 On Windows, use [Zadig](https://sourceforge.net/projects/libwdi/files/zadig/) to install the WinUSB driver.
 
-Then, just run
-
-```
-npm install uvc-control
-```
+Then, just run `npm install uvc-control`
 
 
 ## API
 
 ```javascript
-var UVCControl = require('uvc-control');
+const UVCControl = require('uvc-control')
 ```
 
 ### UVCControl.controls
 
-An array of support controls.
+Log the names of supported controls. These controls are supported by this lib, but not necessarily by the user's device. Work is in progress on detecting device capabilities.
 
 ```javascript
-UVCControl.controls.forEach(function(name) {
-  console.log(name);
-})
+UVCControl.controls.forEach(name => console.log(name))
 ```
 
 ### new UVCControl(options)
@@ -75,7 +62,7 @@ UVCControl.controls.forEach(function(name) {
 * **options.processingUnitId** - override processing unit id if not 0x03
 
 ```javaScript
-var camera = new UVCControl(options);
+const camera = new UVCControl(options)
 ```
 
 #### Note on inputTerminalId / processingUnitId:
@@ -84,11 +71,11 @@ These are values that should be able to be autodetected for a UVC compliant came
 
 ```javascript
 // Set up QuickCam 9000
-var camera = new UVCControl({
-	vid: 0x046d, 
-	pid: 0x082d, 
-	processingUnitId: 0x02
-});
+const camera = new UVCControl({
+  vid: 0x046d,
+  pid: 0x082d,
+  processingUnitId: 0x02
+})
 ```
 
 You can find out your setting by using something like `USB Prober` for OSX:
@@ -97,26 +84,22 @@ You can find out your setting by using something like `USB Prober` for OSX:
 
 This should be a temporary workaround. Ideas for how to autodetect the proper id's are welcome!
 
-### camera.get( controlName, callback )
+### camera.get( controlName )
 
 Get the current value of the specified control by name.
 
 ```javascript
-camera.get('sharpness', function(error, value) {
-	if (error) return console.log(error);
-	console.log('Sharpness is', value);
-});
+camera.get('sharpness').then(value => console.log('Sharpness is', value))
 ```
 
-### camera.range( controlName, callback )
+### camera.range( controlName )
 
 Get the min and max value of the specified control by name. Some controls do not support this method.
 
 ```javascript
-camera.range('absoluteFocus', function(error, range) {
-	if (error) return console.log(error);
-	console.log(range); // [ 0, 250 ]
-});
+camera.range('absoluteFocus').then(range => {
+  console.log(range) // [ 0, 250 ]
+})
 ```
 
 ### camera.set( controlName, value, callback )
@@ -124,10 +107,7 @@ camera.range('absoluteFocus', function(error, range) {
 Set the value of the specified control by name.
 
 ```javascript
-camera.set('saturation', 100, function(error) {
-	if (error) return console.log(error);
-	console.log('Saturation set!');
-});
+camera.set('saturation', 100).then(val => console.log('Saturation set!'))
 ```
 
 ### camera.setRaw( controlName, buffer, callback )
@@ -136,15 +116,14 @@ Some controls do not accept numbers. This is a workaround so you can give them w
 
 
 ```javascript
-var pan = 34;
-var tilt = 27;
-var buffer = new Buffer(8);
-buffer.writeIntLE(pan, 0,4);
-buffer.writeIntLE(tilt, 4,4);
-camera.setRaw('absolutePanTilt', buffer, function(error) {
-	if (error) return console.log(error);
-	console.log('Saturation set!');
-});
+const pan = 34
+const tilt = 27
+const buffer = new Buffer(8)
+buffer.writeIntLE(pan, 0, 4)
+buffer.writeIntLE(tilt, 4, 4)
+camera.setRaw('absolutePanTilt', buffer).then(() => {
+  console.log('Saturation set!')
+})
 ```
 
 ### camera.close()
@@ -152,7 +131,7 @@ camera.setRaw('absolutePanTilt', buffer, function(error) {
 Done? Good. Put away your toys and release the USB device.
 
 ```javascript
-camera.close();
+camera.close()
 ```
 
 ## Currently Supported Controls
@@ -167,12 +146,12 @@ camera.close();
         * aperture priority: `0b00001000` (8)
 
 * autoExposurePriority
- 
+
     `autoExposurePriority` is used to specify constraints on the `absoluteExposureTime` when `autoExposureMode` is set to `auto` or `shutter priority`. A value of `0` means that the frame rate must remain constant. A value of `1` means that the frame rate may be dynamically varied by the device.
 
 * absoluteExposureTime
 
-    `absoluteExposureTime` is used to specify the length of exposure. This value is expressed in 100µs units, where 1 is 1/10,000th of a second, 10,000 is 1 second, and 100,000 is 10 seconds. 
+    `absoluteExposureTime` is used to specify the length of exposure. This value is expressed in 100µs units, where 1 is 1/10,000th of a second, 10,000 is 1 second, and 100,000 is 10 seconds.
 
 * absoluteFocus
 
