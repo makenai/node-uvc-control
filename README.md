@@ -7,7 +7,10 @@ Control a USB Video Class compliant webcam from node. Most modern USB webcams us
 ```javascript
 var UVCControl = require('uvc-control');
 
-var camera = new UVCControl(0x046d, 0x082d);
+// get the first camera by default
+var camera = new UVCControl();
+// or get a specific camera
+var camera = new UVCControl({vid: 0x046d, pid: 0x082d});
 
 camera.get('autoFocus', function(error,value) {
 	console.log('AutoFocus setting:', value);
@@ -63,16 +66,16 @@ UVCControl.controls.forEach(function(name) {
 })
 ```
 
-### new UVCControl(vendorId, productId, options)
+### new UVCControl(options)
 
-* **vendorId** - numeric vendor id of your device (see above)
-* **productId** - numeric product id of your device (see above)
 * **options** - object containing options
+* **options.vid** - numeric vendor id of your device (see above)
+* **options.pid** - numeric product id of your device (see above)
 * **options.inputTerminalId** - override input terminal id if not 0x01
 * **options.processingUnitId** - override processing unit id if not 0x03
 
 ```javaScript
-var camera = new UVCControl(0x046d, 0x082d);
+var camera = new UVCControl(options);
 ```
 
 #### Note on inputTerminalId / processingUnitId:
@@ -81,7 +84,9 @@ These are values that should be able to be autodetected for a UVC compliant came
 
 ```javascript
 // Set up QuickCam 9000
-var camera = new UVCControl(0x046d, 0x082d, {
+var camera = new UVCControl({
+	vid: 0x046d, 
+	pid: 0x082d, 
 	processingUnitId: 0x02
 });
 ```
