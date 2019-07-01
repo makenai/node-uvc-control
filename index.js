@@ -66,17 +66,13 @@ class UVCControl extends EventEmitter {
 
     this.getSupportedControls().then((supportedControls) => {
       this.supportedControls = supportedControls
-      // console.log('!!!!!!!!!!!!!!!!!!!!', Object.keys(supportedControls))
       this.emit('initialized')
     })
   }
 
   getSupportedControls() {
     return new Promise((resolve, reject) => {
-
       Promise.all(Object.entries(controls).map(([name, control]) => {
-        // console.log(name, control)
-
         return new Promise((resolve, reject) => {
           this.get(name).then(() => {
             resolve({
@@ -85,7 +81,6 @@ class UVCControl extends EventEmitter {
             })
           }).catch(() => resolve(null))
         })
-
       })).then(supportedControls => {
         supportedControls = supportedControls.filter(c => c) // rm nulls
         const mergedSupportedControls = {}
