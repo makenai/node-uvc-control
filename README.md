@@ -50,62 +50,63 @@ Then, just run `npm install uvc-control`
 const UVCControl = require('uvc-control')
 ```
 
-### UVCControl.controls
-
-Log the names of supported controls. These controls are supported by this lib, but not necessarily by the user's device. Work is in progress on detecting device capabilities.
-
-```javascript
-UVCControl.controls.forEach(name => console.log(name))
-```
-
 ### new UVCControl(options)
 
 * **options** - object containing options
-* **options.vid** - numeric vendor id of your device (see above)
-* **options.pid** - numeric product id of your device (see above)
+* **options.vid** - vendor id of your device
+* **options.pid** - product id of your device
+* **options.deviceAddress** - device address
 
 ```javaScript
 const camera = new UVCControl(options)
 ```
 
-### camera.get( controlName )
+### List controls
+
+Log the names of controls. You can get all controls, or wait for the initialization to complete to see a list of controls supported by the device.
+
+```javascript
+UVCControl.controls.forEach(name => console.log(name))
+camera.on('initialized', () => {
+  console.log(Object.keys(cam.supportedControls))
+})
+```
+
+### camera.get( control_name )
 
 Get the current value of the specified control by name.
 
 ```javascript
-camera.get('sharpness').then(value => console.log('Sharpness is', value))
+camera.get('sharpness').then(value => console.log('sharpness', value))
 ```
 
-### camera.range( controlName )
+### camera.range( control_name )
 
 Get the min and max value of the specified control by name. Some controls do not support this method.
 
 ```javascript
-camera.range('absoluteFocus').then(range => {
-  console.log(range) // [ 0, 250 ]
+camera.range('absolute_focus').then(range => {
+  console.log(range) // { min: 0, max: 250 }
 })
 ```
 
-### camera.set( controlName, value )
+### camera.set( control_name, value )
 
 Set the value of the specified control by name.
 
 ```javascript
-camera.set('saturation', 100).then(val => console.log('Saturation set!'))
+camera.set('saturation', 100).then(() => console.log('saturation set!'))
 ```
 
-### camera.set( controlName, buffer )
+### camera.set( control_name, ...values )
 
-Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
+Some controls have multiple fields. You can pass multiple values that align with the field offsets.
 
 ```javascript
 const pan = 34
 const tilt = 27
-const buffer = Buffer.alloc(8)
-buffer.writeIntLE(pan, 0, 4)
-buffer.writeIntLE(tilt, 4, 4)
-camera.set('absolutePanTilt', buffer).then(() => {
-  console.log('absolutePanTilt set!')
+camera.set('absolute_pan_tilt', pan, tilt).then(() => {
+  console.log('absolute_pan_tilt set!')
 })
 ```
 
@@ -117,44 +118,11 @@ Done? Good. Put away your toys and release the USB device.
 camera.close()
 ```
 
-## Currently Supported Controls
+### Notes
 
-* autoExposureMode
+You can find the full list of specs at the USB Implmentors Forum. Look for a document called *USB Device Class Definition for Video Devices Revision 1.1* at their site here: [http://www.usb.org/developers/docs/devclass_docs/](http://www.usb.org/developers/docs/devclass_docs/) [pdf mirror](http://www.cajunbot.com/wiki/images/8/85/USB_Video_Class_1.1.pdf)
 
-    `autoExposureMode` determines whether the device will provide automatic adjustment of the exposure time and iris controls. The expected value is a bitmask:
-
-        * manual: `0b00000001` (1)
-        * auto: `0b00000010` (2)
-        * shutter priority: `0b00000100` (4)
-        * aperture priority: `0b00001000` (8)
-
-* autoExposurePriority
-
-    `autoExposurePriority` is used to specify constraints on the `absoluteExposureTime` when `autoExposureMode` is set to `auto` or `shutter priority`. A value of `0` means that the frame rate must remain constant. A value of `1` means that the frame rate may be dynamically varied by the device.
-
-* absoluteExposureTime
-
-    `absoluteExposureTime` is used to specify the length of exposure. This value is expressed in 100µs units, where 1 is 1/10,000th of a second, 10,000 is 1 second, and 100,000 is 10 seconds.
-
-* absoluteFocus
-
-    `absoluteFocus` is used to specify the distance, in millimiters to the focused target.
-
-* absoluteZoom
-* absolutePanTilt
-* autoFocus
-* brightness
-* contrast
-* saturation
-* sharpness
-* whiteBalanceTemperature
-* backlightCompensation
-* gain
-* autoWhiteBalance
-
-### Note:
-
-This library was written with a Logitech C920 camera in mind. While it should work with any UVC complient webcam, I didn't implement things that weren't supported by my camera. You can find the full list of specs at the USB Implmentors Forum. Look for a document called *USB Device Class Definition for Video Devices Revision 1.1* at their site here: [http://www.usb.org/developers/docs/devclass_docs/](http://www.usb.org/developers/docs/devclass_docs/)
+To debug the USB descriptors, open chrome://usb-internals in Chrome
 
 Pull requests and testers welcome!
 
