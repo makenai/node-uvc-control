@@ -5,18 +5,15 @@ const {
   REQUEST
 } = require('./lib/constants')
 const controls = require('./lib/controls')
+const EventEmitter = require('events').EventEmitter
 
-class UVCControl {
+class UVCControl extends EventEmitter {
 
   constructor(options = {}) {
+    super()
     this.options = options
     this.init()
     if (!this.device) throw Error('No device found, using options:', options)
-    const descriptors = getInterfaceDescriptors(this.device)
-    this.ids = {
-      processingUnit: descriptors.processingUnit.id,
-      inputTerminal: descriptors.inputTerminal.id,
-    }
   }
 
   init() {
@@ -60,6 +57,42 @@ class UVCControl {
       this.device.open()
       this.interfaceNumber = detectVideoControlInterface(this.device)
     }
+
+    const descriptors = getInterfaceDescriptors(this.device)
+    this.ids = {
+      processingUnit: descriptors.processingUnit.id,
+      inputTerminal: descriptors.inputTerminal.id,
+    }
+
+    this.getSupportedControls().then((supportedControls) => {
+      this.supportedControls = supportedControls
+      // console.log('!!!!!!!!!!!!!!!!!!!!', Object.keys(supportedControls))
+      this.emit('initialized')
+    })
+  }
+
+  getSupportedControls() {
+    return new Promise((resolve, reject) => {
+
+      Promise.all(Object.entries(controls).map(([name, control]) => {
+        // console.log(name, control)
+
+        return new Promise((resolve, reject) => {
+          this.get(name).then(() => {
+            resolve({
+              name,
+              control
+            })
+          }).catch(() => resolve(null))
+        })
+
+      })).then(supportedControls => {
+        supportedControls = supportedControls.filter(c => c) // rm nulls
+        const mergedSupportedControls = {}
+        supportedControls.forEach(control => mergedSupportedControls[control.name] = control.control)
+        resolve(mergedSupportedControls)
+      })
+    })
   }
 
   getControlParams(id) {
