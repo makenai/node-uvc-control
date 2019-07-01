@@ -1,104 +1,10 @@
 const usb = require('usb')
-
-const UVC_SET_CUR = 0x01
-const UVC_GET_CUR = 0x81
-const UVC_GET_MIN = 0x82
-const UVC_GET_MAX = 0x83
-
-// See USB Device Class Definition for Video Devices Revision 1.1
-// http://www.usb.org/developers/docs/devclass_docs/
-// Specifically:
-// - 4.2 VideoControl Requests
-// - A.9. Control Selector Codes
-
-const Controls = {
-  // ==============
-  // Input Terminal
-  // ==============
-  autoExposureMode: {
-    // D0: UVCControl.EXPOSURE_MANUAL - Manual Mode – manual Exposure Time, manual Iris
-    // D1: UVCControl.EXPOSURE_AUTO - Auto Mode – auto Exposure Time, auto Iris
-    // D2: UVCControl.EXPOSURE_PRIORITY_SHUTTER - Shutter Priority Mode – manual Exposure Time, auto Iris
-    // D3: UVCControl.EXPOSURE_PRIORITY_APERTURE - Aperture Priority Mode – auto Exposure Time, manual Iris
-    // D4..D7: Reserved, set to zero.
-    type: 'inputTerminal',
-    selector: 0x02,
-    size: 1
-  },
-  autoExposurePriority: {
-    type: 'inputTerminal',
-    selector: 0x03,
-    size: 1
-  },
-  absoluteExposureTime: {
-    type: 'inputTerminal',
-    selector: 0x04,
-    size: 4
-  },
-  absoluteFocus: {
-    type: 'inputTerminal',
-    selector: 0x06,
-    size: 2
-  },
-  absoluteZoom: {
-    type: 'inputTerminal',
-    selector: 0x0B,
-    size: 2
-  },
-  absolutePanTilt: {
-    type: 'inputTerminal',
-    selector: 0x0D,
-    size: 8 // dwPanAbsolute (4 bytes) + dwTiltAbsolute (4 bytes)
-  },
-  autoFocus: {
-    type: 'inputTerminal',
-    selector: 0x08,
-    size: 1
-  },
-  // ===============
-  // Processing Unit
-  // ===============
-  brightness: {
-    type: 'processingUnit',
-    selector: 0x02,
-    size: 2
-  },
-  contrast: {
-    type: 'processingUnit',
-    selector: 0x03,
-    size: 2
-  },
-  saturation: {
-    type: 'processingUnit',
-    selector: 0x07,
-    size: 2
-  },
-  sharpness: {
-    type: 'processingUnit',
-    selector: 0x08,
-    size: 2
-  },
-  whiteBalanceTemperature: {
-    type: 'processingUnit',
-    selector: 0x0A,
-    size: 2
-  },
-  backlightCompensation: {
-    type: 'processingUnit',
-    selector: 0x01,
-    size: 2
-  },
-  gain: {
-    type: 'processingUnit',
-    selector: 0x04,
-    size: 2
-  },
-  autoWhiteBalance: {
-    type: 'processingUnit',
-    selector: 0x0B,
-    size: 1
-  }
-}
+const {
+  PU,
+  BM_REQUEST_TYPE,
+  REQUEST
+} = require('./lib/constants')
+const CONTROLS = require('./lib/controls')
 
 class UVCControl {
 
@@ -163,16 +69,17 @@ class UVCControl {
     if (this.interfaceNumber === undefined) {
       throw Error('UVC compliant device not found.')
     }
-    var control = Controls[id]
+    const control = CONTROLS[id]
     if (!control) {
       throw Error('UVC Control identifier not recognized: ' + id)
     }
 
-    var unit = this.ids[control.type]
-    var params = {
+    const controlType = control.selector in PU ? 'processingUnit' : 'inputTerminal'
+    const unit = this.ids[controlType]
+    const params = {
       wValue: (control.selector << 8) | 0x00,
       wIndex: (unit << 8) | this.interfaceNumber,
-      wLength: control.size
+      wLength: control.wLength
     }
     return params
   }
@@ -191,7 +98,7 @@ class UVCControl {
   get(id) {
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
-      this.device.controlTransfer(0b10100001, UVC_GET_CUR, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
+      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_CUR, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
         if (error) reject(error)
         else resolve(readInt(buffer, params.wLength))
       })
@@ -201,7 +108,7 @@ class UVCControl {
   /**
    * Set the value of a control
    * @param {string} controlId
-   * @param {number||buffer} value
+   * @param {number || buffer} value
    */
   set(id, value) {
     return new Promise((resolve, reject) => {
@@ -211,13 +118,12 @@ class UVCControl {
         data = Buffer.alloc(params.wLength)
         writeInt(data, value, params.wLength)
       }
-      this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, data, (err) => {
+      this.device.controlTransfer(BM_REQUEST_TYPE.SET, REQUEST.SET_CUR, params.wValue, params.wIndex, data, (err) => {
         if (err) reject(err)
         else resolve(value)
       })
     })
   }
-
   /**
    * Get the min and max range of a control
    * @param {string} controlName
@@ -225,9 +131,10 @@ class UVCControl {
   range(id) {
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
-      this.device.controlTransfer(0b10100001, UVC_GET_MIN, params.wValue, params.wIndex, params.wLength, (error, min) => {
+      // TODO promise wrapper for controlTransfer so we can do parallel requests
+      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, params.wLength, (error, min) => {
         if (error) return reject(error)
-        this.device.controlTransfer(0b10100001, UVC_GET_MAX, params.wValue, params.wIndex, params.wLength, (error, max) => {
+        this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, params.wLength, (error, max) => {
           if (error) return reject(error)
           resolve([min.readIntLE(0, params.wLength), max.readIntLE(0, params.wLength)])
         })
@@ -239,10 +146,6 @@ class UVCControl {
 /*
   Class level stuff
 */
-UVCControl.EXPOSURE_MANUAL = 0b00000001
-UVCControl.EXPOSURE_AUTO = 0b00000010
-UVCControl.EXPOSURE_PRIORITY_SHUTTER = 0b00000100
-UVCControl.EXPOSURE_PRIORITY_APERTURE = 0b00001000
 
 /**
  * Discover uvc devices
@@ -283,7 +186,7 @@ UVCControl.validate = (device) => {
  * Get list of recognized controls
  * @return {Array} controls
  */
-UVCControl.controls = Object.keys(Controls)
+UVCControl.controls = Object.keys(CONTROLS)
 
 /**
  * Given a USB device, iterate through all of the exposed interfaces looking for
