@@ -104,7 +104,7 @@ const tilt = 27
 const buffer = Buffer.alloc(8)
 buffer.writeIntLE(pan, 0, 4)
 buffer.writeIntLE(tilt, 4, 4)
-camera.setRaw('absolutePanTilt', buffer).then(() => {
+camera.set('absolutePanTilt', buffer).then(() => {
   console.log('absolutePanTilt set!')
 })
 ```
