@@ -219,21 +219,6 @@ class UVCControl {
   }
 
   /**
-   * Set the raw value of a control
-   * @param {string} controlId
-   * @param {buffer} value
-   */
-  // setRaw(id, value) {
-  //   return new Promise((resolve, reject) => {
-  //     const params = this.getControlParams(id)
-  //     this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, value, (err) => {
-  //       if (err) reject(err)
-  //       else resolve(value)
-  //     })
-  //   })
-  // }
-
-  /**
    * Get the min and max range of a control
    * @param {string} controlName
    */
