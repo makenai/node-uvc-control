@@ -4,7 +4,7 @@ const {
   BM_REQUEST_TYPE,
   REQUEST
 } = require('./lib/constants')
-const CONTROLS = require('./lib/controls')
+const controls = require('./lib/controls')
 
 class UVCControl {
 
@@ -63,18 +63,12 @@ class UVCControl {
   }
 
   getControlParams(id) {
-    if (!this.device) {
-      throw Error('USB device not found with vid 0x' + this.options.vid.toString(16) + ', pid 0x' + this.options.pid.toString(16))
-    }
-    if (this.interfaceNumber === undefined) {
-      throw Error('UVC compliant device not found.')
-    }
-    const control = CONTROLS[id]
+    const control = controls[id]
     if (!control) {
       throw Error('UVC Control identifier not recognized: ' + id)
     }
 
-    const controlType = control.selector in PU ? 'processingUnit' : 'inputTerminal'
+    const controlType = Object.values(PU).indexOf(control.selector) !== -1 ? 'processingUnit' : 'inputTerminal'
     const unit = this.ids[controlType]
     const params = {
       wValue: (control.selector << 8) | 0x00,
@@ -96,11 +90,24 @@ class UVCControl {
    * @param {string} controlName
    */
   get(id) {
+    const control = controls[id]
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
       this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_CUR, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
-        if (error) reject(error)
-        else resolve(readInt(buffer, params.wLength))
+        if (error) return reject({
+          id,
+          error
+        })
+        const fields = {}
+        control.fields.forEach(field => {
+          // console.log(field.name, field.offset, field.size, buffer.byteLength)
+          // sometimes the field doesn't take up the space it has
+          const size = Math.min(field.size, buffer.byteLength)
+          // sometimes the field isn't there...?
+          if (field.offset === field.size) return
+          fields[field.name] = buffer.readIntLE(field.offset, size)
+        })
+        resolve(fields)
       })
     })
   }
@@ -108,16 +115,22 @@ class UVCControl {
   /**
    * Set the value of a control
    * @param {string} controlId
-   * @param {number || buffer} value
+   * @param {number} ...values
    */
-  set(id, value) {
+  set(id, ...values) {
     return new Promise((resolve, reject) => {
+      const control = controls[id]
       const params = this.getControlParams(id)
-      let data = value
-      if (!(value instanceof Buffer)) {
-        data = Buffer.alloc(params.wLength)
-        writeInt(data, value, params.wLength)
-      }
+      // let data = value
+      // if (!(value instanceof Buffer)) {
+      //   data = Buffer.alloc(params.wLength)
+      //   writeInt(data, value, params.wLength)
+      // }
+      const data = Buffer.alloc(params.wLength)
+      control.fields.forEach((field, i) => {
+        data.writeIntLE(values[i], field.offset, field.size)
+      })
+
       this.device.controlTransfer(BM_REQUEST_TYPE.SET, REQUEST.SET_CUR, params.wValue, params.wIndex, data, (err) => {
         if (err) reject(err)
         else resolve(value)
@@ -146,6 +159,9 @@ class UVCControl {
 /*
   Class level stuff
 */
+
+UVCControl.controls = controls
+UVCControl.REQUEST = REQUEST
 
 /**
  * Discover uvc devices
@@ -183,12 +199,6 @@ UVCControl.validate = (device) => {
 }
 
 /**
- * Get list of recognized controls
- * @return {Array} controls
- */
-UVCControl.controls = Object.keys(CONTROLS)
-
-/**
  * Given a USB device, iterate through all of the exposed interfaces looking for
  * the one for VideoControl. bInterfaceClass = CC_VIDEO (0x0e) and
  * bInterfaceSubClass = SC_VIDEOCONTROL (0x01)
@@ -217,26 +227,6 @@ function isWebcam(device) {
   // http://www.usb.org/developers/defined_class/#BaseClass10h
   return device.deviceDescriptor.bDeviceClass === 239 &&
     device.deviceDescriptor.bDeviceSubClass === 2
-}
-
-function readInt(buffer, length) {
-  if (length === 8) {
-    var low = 0 & 0xffffffff
-    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
-    return buffer.readIntLE(low) + buffer.readUIntLE(high, 4)
-  } else {
-    return buffer.readIntLE(0, length)
-  }
-}
-
-function writeInt(buffer, value, length) {
-  if (length === 8) {
-    var low = 0 & 0xffffffff
-    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
-    return buffer.writeIntLE(value, low) + buffer.writeUIntLE(value, high, 4)
-  } else {
-    return buffer.writeIntLE(value, 0, length)
-  }
 }
 
 function getInterfaceDescriptors(device) {
