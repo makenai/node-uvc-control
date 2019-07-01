@@ -182,7 +182,10 @@ class UVCControl extends EventEmitter {
         if (error) return reject(error)
         this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, params.wLength, (error, max) => {
           if (error) return reject(error)
-          resolve([min.readIntLE(0, params.wLength), max.readIntLE(0, params.wLength)])
+          resolve({
+            min: min.readIntLE(0, params.wLength),
+            max: max.readIntLE(0, params.wLength)
+          })
         })
       })
     })
