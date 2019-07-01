@@ -142,6 +142,11 @@ class UVCControl {
    * @param {string} controlName
    */
   range(id) {
+    const control = controls[id]
+    if (control.requests.indexOf(REQUEST.GET_MIN) === -1) {
+      throw Error('range request not supported for ', id)
+    }
+
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
       // TODO promise wrapper for controlTransfer so we can do parallel requests
