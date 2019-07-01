@@ -105,6 +105,7 @@ class UVCControl {
   constructor(options = {}) {
     this.options = options
     this.init()
+    if (!this.device) throw Error('No device found, using options:', options)
     const descriptors = getInterfaceDescriptors(this.device)
     this.ids = {
       processingUnit: descriptors.processingUnit.id,
@@ -200,29 +201,17 @@ class UVCControl {
   /**
    * Set the value of a control
    * @param {string} controlId
-   * @param {number} value
+   * @param {number||buffer} value
    */
   set(id, value) {
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
-      var data = Buffer.alloc(params.wLength)
-      writeInt(data, value, params.wLength)
+      let data = value
+      if (!(value instanceof Buffer)) {
+        data = Buffer.alloc(params.wLength)
+        writeInt(data, value, params.wLength)
+      }
       this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, data, (err) => {
-        if (err) reject(err)
-        else resolve(value)
-      })
-    })
-  }
-
-  /**
-   * Set the raw value of a control
-   * @param {string} controlId
-   * @param {buffer} value
-   */
-  setRaw(id, value) {
-    return new Promise((resolve, reject) => {
-      const params = this.getControlParams(id)
-      this.device.controlTransfer(0b00100001, UVC_SET_CUR, params.wValue, params.wIndex, value, (err) => {
         if (err) reject(err)
         else resolve(value)
       })

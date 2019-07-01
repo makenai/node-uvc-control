@@ -94,18 +94,18 @@ Set the value of the specified control by name.
 camera.set('saturation', 100).then(val => console.log('Saturation set!'))
 ```
 
-### camera.setRaw( controlName, buffer )
+### camera.set( controlName, buffer )
 
 Some controls do not accept numbers. This is a workaround so you can give them what they need. The odd one so far is `absolutePanTilt`, which expects a buffer of two 4 byte numbers:
 
 ```javascript
 const pan = 34
 const tilt = 27
-const buffer = new Buffer(8)
+const buffer = Buffer.alloc(8)
 buffer.writeIntLE(pan, 0, 4)
 buffer.writeIntLE(tilt, 4, 4)
-camera.setRaw('absolutePanTilt', buffer).then(() => {
-  console.log('Saturation set!')
+camera.set('absolutePanTilt', buffer).then(() => {
+  console.log('absolutePanTilt set!')
 })
 ```
 
