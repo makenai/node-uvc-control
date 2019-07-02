@@ -65,13 +65,11 @@ const camera = new UVCControl(options)
 
 ### List controls
 
-Log the names of controls. You can get all controls, or wait for the initialization to complete to see a list of controls supported by the device.
+Log the names of controls. You can get all controls, or a list of controls supported by the device.
 
 ```javascript
 UVCControl.controls.forEach(name => console.log(name))
-camera.on('initialized', () => {
-  console.log(Object.keys(cam.supportedControls))
-})
+console.log(cam.supportedControls)
 ```
 
 ### camera.get( control_name )

@@ -2,10 +2,10 @@ const usb = require('usb')
 const {
   SC,
   CC,
-  VS,
+  // VS,
   VC,
   CS,
-  VS_DESCRIPTOR_SUBTYPE,
+  // VS_DESCRIPTOR_SUBTYPE,
   BM_REQUEST_TYPE,
   REQUEST
 } = require('./lib/constants')
@@ -65,34 +65,11 @@ class UVCControl extends EventEmitter {
 
     const descriptors = getInterfaceDescriptors(this.device)
     this.ids = {
-      processingUnit: descriptors.processingUnit.id,
-      inputTerminal: descriptors.inputTerminal.id,
+      processingUnit: descriptors.processingUnit.bUnitID,
+      cameraInputTerminal: descriptors.cameraInputTerminal.bTerminalID,
     }
 
-    this.getSupportedControls().then((supportedControls) => {
-      this.supportedControls = supportedControls
-      this.emit('initialized')
-    })
-  }
-
-  getSupportedControls() {
-    return new Promise((resolve, reject) => {
-      Promise.all(Object.entries(controls).map(([name, control]) => {
-        return new Promise((resolve, reject) => {
-          this.get(name).then(() => {
-            resolve({
-              name,
-              control
-            })
-          }).catch(() => resolve(null))
-        })
-      })).then(supportedControls => {
-        supportedControls = supportedControls.filter(c => c) // rm nulls
-        const mergedSupportedControls = {}
-        supportedControls.forEach(control => mergedSupportedControls[control.name] = control.control)
-        resolve(mergedSupportedControls)
-      })
-    })
+    this.supportedControls = descriptors.cameraInputTerminal.controls.concat(descriptors.processingUnit.controls)
   }
 
   getControlParams(id) {
@@ -289,17 +266,79 @@ function getInterfaceDescriptors(device) {
   }
 
   // Table 3-6 Camera Terminal Descriptor
-  const iTD = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.INPUT_TERMINAL)[0]
-  const inputTerminal = {
-    id: iTD[3]
+  const cameraInputTerminalDescriptor = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.INPUT_TERMINAL)[0]
+  const cITDBuffer = Buffer.from(cameraInputTerminalDescriptor)
+  let bControlSize = cITDBuffer.readIntLE(14, 1)
+  let bmControls = bitmask(cITDBuffer.readIntLE(15, bControlSize))
+  const cameraInputTerminal = {
+    bTerminalID: cITDBuffer.readIntLE(3, 1),
+    wObjectiveFocalLengthMin: cITDBuffer.readIntLE(8, 2),
+    wObjectiveFocalLengthMax: cITDBuffer.readIntLE(10, 2),
+    wOcularFocalLength: cITDBuffer.readIntLE(12, 2),
+    controls: [
+      'scanning_mode',
+      'auto_exposure_mode',
+      'auto_exposure_priority',
+      'absolute_exposure_time',
+      'relative_exposure_time',
+      'absolute_focus',
+      'relative_focus',
+      'absolute_iris',
+      'relative_iris',
+      'absolute_zoom',
+      'relative_zoom',
+      'absolute_pan_tilt',
+      'relative_pan_tilt',
+      'absolute_roll',
+      'relative_roll',
+      undefined,
+      undefined,
+      'auto_focus',
+      'privacy',
+    ].filter((name, i) => bmControls[i] && name)
   }
 
   // Table 3-8 Processing Unit Descriptor
-  const pUD = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.PROCESSING_UNIT)[0]
+  const processingUnitDescriptor = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.PROCESSING_UNIT)[0]
+  const pUDBuffer = Buffer.from(processingUnitDescriptor)
+  bControlSize = pUDBuffer.readIntLE(7, 1)
+  bmControls = bitmask(pUDBuffer.readIntLE(8, bControlSize))
+  const bmVideoStandards = bitmask(pUDBuffer.readIntLE(8 + bControlSize, 1))
   const processingUnit = {
-    id: pUD[3]
+    bUnitID: pUDBuffer.readIntLE(3, 1),
+    wMaxMultiplier: pUDBuffer.readIntLE(3, 1),
+    controls: [
+      'brightness',
+      'contrast',
+      'hue',
+      'saturation',
+      'sharpness',
+      'gamma',
+      'white_balance_temperature',
+      'white_balance_component',
+      'backlight_compensation',
+      'gain',
+      'power_line_frequency',
+      'auto_hue',
+      'auto_white_balance_temperature',
+      'auto_white_balance_component',
+      'digital_multiplier',
+      'digital_multiplier_limit',
+      'analog_video_standard',
+      'analog_lock_status',
+    ].filter((name, i) => bmControls[i]),
+    videoStandards: [
+      'NONE',
+      'NTSC_525_60',
+      'PAL_625_50',
+      'SECAM_625_50',
+      'NTSC_625_50',
+      'PAL_525_60',
+    ].filter((name, i) => bmVideoStandards[i])
   }
 
+  console.log('cameraInputTerminal', cameraInputTerminal)
+  console.log('processingUnit', processingUnit)
 
   /*
     3.9.2.1 Input Header Descriptor
@@ -316,8 +355,10 @@ function getInterfaceDescriptors(device) {
 
   return {
     processingUnit,
-    inputTerminal,
+    cameraInputTerminal,
   }
 }
+
+const bitmask = (int) => int.toString(2).split('').reverse().map(i => parseInt(i))
 
 module.exports = UVCControl
