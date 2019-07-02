@@ -2,4 +2,6 @@
 
 const UVCControl = require('../index')
 const cam = new UVCControl()
-cam.on('initialized', () => console.log('Supported controls:', Object.keys(cam.supportedControls)))
+console.log(cam.supportedControls)
+cam.close()
+// cam.on('initialized', () => console.log('Supported controls:', Object.keys(cam.supportedControls)))
