@@ -326,7 +326,7 @@ function getInterfaceDescriptors(device) {
       'digital_multiplier_limit',
       'analog_video_standard',
       'analog_lock_status',
-    ].filter((name, i) => bmControls[i] && name),
+    ].filter((name, i) => bmControls[i]),
     videoStandards: [
       'NONE',
       'NTSC_525_60',
