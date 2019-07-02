@@ -1,6 +1,11 @@
 const usb = require('usb')
 const {
-  PU,
+  SC,
+  CC,
+  VS,
+  VC,
+  CS,
+  VS_DESCRIPTOR_SUBTYPE,
   BM_REQUEST_TYPE,
   REQUEST
 } = require('./lib/constants')
@@ -55,7 +60,7 @@ class UVCControl extends EventEmitter {
 
     if (this.device) {
       this.device.open()
-      this.interfaceNumber = detectVideoControlInterface(this.device)
+      this.videoControlInterfaceNumber = detectVideoControlInterface(this.device)
     }
 
     const descriptors = getInterfaceDescriptors(this.device)
@@ -96,11 +101,15 @@ class UVCControl extends EventEmitter {
       throw Error('UVC Control identifier not recognized: ' + id)
     }
 
-    const controlType = Object.values(PU).indexOf(control.selector) !== -1 ? 'processingUnit' : 'inputTerminal'
+    const controlType = {
+      PU: 'processingUnit',
+      CT: 'inputTerminal',
+      // VS: 'videoStream',
+    } [control.type]
     const unit = this.ids[controlType]
     const params = {
       wValue: (control.selector << 8) | 0x00,
-      wIndex: (unit << 8) | this.interfaceNumber,
+      wIndex: (unit << 8) | this.videoControlInterfaceNumber,
       wLength: control.wLength
     }
     return params
@@ -149,11 +158,6 @@ class UVCControl extends EventEmitter {
     return new Promise((resolve, reject) => {
       const control = controls[id]
       const params = this.getControlParams(id)
-      // let data = value
-      // if (!(value instanceof Buffer)) {
-      //   data = Buffer.alloc(params.wLength)
-      //   writeInt(data, value, params.wLength)
-      // }
       const data = Buffer.alloc(params.wLength)
       control.fields.forEach((field, i) => {
         data.writeIntLE(values[i], field.offset, field.size)
@@ -235,9 +239,7 @@ UVCControl.validate = (device) => {
 }
 
 /**
- * Given a USB device, iterate through all of the exposed interfaces looking for
- * the one for VideoControl. bInterfaceClass = CC_VIDEO (0x0e) and
- * bInterfaceSubClass = SC_VIDEOCONTROL (0x01)
+ * Given a USB device, iterate through all of the exposed interfaces looking for the one for VideoControl.
  * @param  {object} device
  * @return {object} interface
  */
@@ -246,8 +248,8 @@ function detectVideoControlInterface(device) {
     interfaces
   } = device
   for (let i = 0; i < interfaces.length; i++) {
-    if (interfaces[i].descriptor.bInterfaceClass == 0x0e &&
-      interfaces[i].descriptor.bInterfaceSubClass == 0x01
+    if (interfaces[i].descriptor.bInterfaceClass == CC.VIDEO &&
+      interfaces[i].descriptor.bInterfaceSubClass == SC.VIDEOCONTROL
     ) {
       return i
     }
@@ -255,14 +257,14 @@ function detectVideoControlInterface(device) {
 }
 
 /**
- * Check the device class / subclass and assert that it is a webcam
+ * Check the device descriptor and assert that it is a webcam
  * @param {object} device
  * @return {Boolean}
  */
 function isWebcam(device) {
-  // http://www.usb.org/developers/defined_class/#BaseClass10h
-  return device.deviceDescriptor.bDeviceClass === 239 &&
-    device.deviceDescriptor.bDeviceSubClass === 2
+  return device.deviceDescriptor.bDeviceClass === 0xef &&
+    device.deviceDescriptor.bDeviceSubClass === 0x02 &&
+    device.deviceDescriptor.bDeviceProtocol === 0x01
 }
 
 function getInterfaceDescriptors(device) {
@@ -273,9 +275,8 @@ function getInterfaceDescriptors(device) {
     const {
       descriptor
     } = interface
-    return descriptor.bInterfaceNumber === 0x00 &&
-      descriptor.bInterfaceClass === 0x0e &&
-      descriptor.bInterfaceSubClass === 0x01
+    return descriptor.bInterfaceClass === CC.VIDEO &&
+      descriptor.bInterfaceSubClass === SC.VIDEOCONTROL
   })[0]
 
   // parse the descriptors in the extra field
@@ -287,17 +288,31 @@ function getInterfaceDescriptors(device) {
     descriptorArrays.push(arr)
   }
 
-  // find the processing unit descriptor
-  const pUD = descriptorArrays.filter(arr => arr[0] === 0x0B && arr[1] === 0x24 && arr[2] === 0x05)[0]
+  // Table 3-6 Camera Terminal Descriptor
+  const iTD = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.INPUT_TERMINAL)[0]
+  const inputTerminal = {
+    id: iTD[3]
+  }
+
+  // Table 3-8 Processing Unit Descriptor
+  const pUD = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VC.PROCESSING_UNIT)[0]
   const processingUnit = {
     id: pUD[3]
   }
 
-  // find input terminal descriptor
-  const iTD = descriptorArrays.filter(arr => arr[0] === 0x12 && arr[1] === 0x24 && arr[2] === 0x02)[0]
-  const inputTerminal = {
-    id: iTD[3]
-  }
+
+  /*
+    3.9.2.1 Input Header Descriptor
+    The Input Header descriptor is used for VS interfaces that contain an IN endpoint for streaming
+    video data. It provides information on the number of different format descriptors that will follow
+    it, as well as the total size of all class-specific descriptors in alternate setting zero of this interface.
+  */
+  // const rawInputHeaderDescriptor = descriptorArrays.filter(arr => arr[1] === CS.INTERFACE && arr[2] === VS_DESCRIPTOR_SUBTYPE.INPUT_HEADER)[0]
+  // const inputHeaderDescriptor = {
+  //   bEndpointAddress: rawInputHeaderDescriptor[6],
+  //   bTerminalLink: rawInputHeaderDescriptor[8],
+  //   bStillCaptureMethod: rawInputHeaderDescriptor[9],
+  // }
 
   return {
     processingUnit,
