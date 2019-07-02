@@ -2,6 +2,8 @@
 
 Control a USB Video Class compliant webcam from node. Most modern USB webcams use a common set of controls standardized by the USB Implementers Forum. You can use this set of controls to change certain things on the camera, such as the brightness, contrast, zoom level, focus and so on.
 
+See also [`uvcc`](https://github.com/joelpurra/uvcc), which wraps uvc-control in a command line tool.
+
 ## Example
 
 ```javascript
