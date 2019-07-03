@@ -2,9 +2,9 @@ const usb = require('usb')
 const {
   SC,
   CC,
-  // VS,
   VC,
   CS,
+  // VS,
   // VS_DESCRIPTOR_SUBTYPE,
   BM_REQUEST_TYPE,
   REQUEST,
@@ -123,6 +123,64 @@ class UVCControl extends EventEmitter {
           fields[field.name] = buffer.readIntLE(field.offset, size)
         })
         resolve(fields)
+      })
+    })
+  }
+
+  getInfo(id) {
+    // check if control can actually make the request
+    const control = controls[id]
+    if (control.requests.indexOf(REQUEST.GET_INFO) === -1) {
+      throw Error(`GET_INFO request is not supported for ${id} on this device.`)
+    }
+
+    return new Promise((resolve, reject) => {
+      const params = this.getControlParams(id)
+      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_INFO, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
+        if (error) return reject({
+          id,
+          error
+        })
+        const bm = bitmask(buffer.readIntLE(0, buffer.byteLength))
+        const info = {
+          // D0 1=Supports GET value requests Capability
+          get: Boolean(bm[0]),
+          // D1 1=Supports SET value requests Capability
+          set: Boolean(bm[1]),
+          // D2 1=Disabled due to automatic mode (under device control) State
+          disabled: Boolean(bm[2]),
+          // D3 1= Autoupdate Control (see section 2.4.2.2 "Status Interrupt Endpoint")
+          autoUpdate: Boolean(bm[3]),
+          // D4 1= Asynchronous Control (see sections 2.4.2.2 "Status Interrupt Endpoint" and 2.4.4, “Control Transfer and Request Processing”)
+          async: Boolean(bm[3]),
+        }
+        resolve(info)
+      })
+    })
+  }
+
+  getDefault(id) {
+    // check if control can actually make the request
+    const control = controls[id]
+    if (control.requests.indexOf(REQUEST.GET_DEF) === -1) {
+      throw Error(`GET_DEF request is not supported for ${id} on this device.`)
+    }
+
+    return new Promise((resolve, reject) => {
+      const params = this.getControlParams(id)
+      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_DEF, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
+        if (error) return reject({
+          id,
+          error
+        })
+
+        // parse based on fields offset/size
+        const fieldDefaults = {}
+        control.fields.forEach(field => {
+          fieldDefaults[field.name] = buffer.readIntLE(field.offset, field.size)
+        })
+
+        resolve(fieldDefaults)
       })
     })
   }
@@ -338,8 +396,8 @@ function getInterfaceDescriptors(device) {
     ].filter((name, i) => bmVideoStandards[i])
   }
 
-  console.log('cameraInputTerminal', cameraInputTerminal)
-  console.log('processingUnit', processingUnit)
+  // console.log('cameraInputTerminal', cameraInputTerminal)
+  // console.log('processingUnit', processingUnit)
 
   /*
     3.9.2.1 Input Header Descriptor
