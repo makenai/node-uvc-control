@@ -85,6 +85,7 @@ class UVCControl extends EventEmitter {
       // VS: 'videoStream',
     } [control.type]
     const unit = this.ids[controlType]
+    // const unit = this.ids.processingUnit
     const params = {
       wValue: (control.selector << 8) | 0x00,
       wIndex: (unit << 8) | this.videoControlInterfaceNumber,
@@ -105,7 +106,7 @@ class UVCControl extends EventEmitter {
    * @param {string} controlName
    */
   get(id) {
-    const control = controls[id]
+    const control = this.getControl(id)
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
       this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_CUR, params.wValue, params.wIndex, params.wLength, (error, buffer) => {
@@ -129,7 +130,7 @@ class UVCControl extends EventEmitter {
 
   getInfo(id) {
     // check if control can actually make the request
-    const control = controls[id]
+    const control = this.getControl(id)
     if (control.requests.indexOf(REQUEST.GET_INFO) === -1) {
       throw Error(`GET_INFO request is not supported for ${id} on this device.`)
     }
@@ -143,15 +144,15 @@ class UVCControl extends EventEmitter {
         })
         const bm = bitmask(buffer.readIntLE(0, buffer.byteLength))
         const info = {
-          // D0 1=Supports GET value requests Capability
+          // D0 Supports GET value requests Capability
           get: Boolean(bm[0]),
-          // D1 1=Supports SET value requests Capability
+          // D1 Supports SET value requests Capability
           set: Boolean(bm[1]),
-          // D2 1=Disabled due to automatic mode (under device control) State
+          // D2 Disabled due to automatic mode (under device control) State
           disabled: Boolean(bm[2]),
-          // D3 1= Autoupdate Control (see section 2.4.2.2 "Status Interrupt Endpoint")
+          // D3 Autoupdate Control (see section 2.4.2.2 "Status Interrupt Endpoint")
           autoUpdate: Boolean(bm[3]),
-          // D4 1= Asynchronous Control (see sections 2.4.2.2 "Status Interrupt Endpoint" and 2.4.4, “Control Transfer and Request Processing”)
+          // D4 Asynchronous Control (see sections 2.4.2.2 "Status Interrupt Endpoint" and 2.4.4, “Control Transfer and Request Processing”)
           async: Boolean(bm[3]),
         }
         resolve(info)
@@ -161,7 +162,7 @@ class UVCControl extends EventEmitter {
 
   getDefault(id) {
     // check if control can actually make the request
-    const control = controls[id]
+    const control = this.getControl(id)
     if (control.requests.indexOf(REQUEST.GET_DEF) === -1) {
       throw Error(`GET_DEF request is not supported for ${id} on this device.`)
     }
@@ -177,12 +178,35 @@ class UVCControl extends EventEmitter {
         // parse based on fields offset/size
         const fieldDefaults = {}
         control.fields.forEach(field => {
-          fieldDefaults[field.name] = buffer.readIntLE(field.offset, field.size)
+          // NOTE min fixes out of bounds error, but this approach doesn't account for multiple fields...
+          let int = buffer.readIntLE(field.offset, Math.min(buffer.byteLength, field.size))
+          let result = int
+          if (field.type === Boolean) {
+            result = Boolean(int)
+          }
+          const results = {
+            value: result,
+          }
+          try {
+            // FIXME: what do we do with negative numbers in bitmaps??
+            // if (field.options && field.type !== 'Bitmap') {
+            results.optionKey = Object.entries(field.options).filter(([key, val]) => {
+              return val === result
+            })[0][0]
+            // }
+          } catch (e) {}
+          fieldDefaults[field.name] = results
         })
 
         resolve(fieldDefaults)
       })
     })
+  }
+
+  getControl(id) {
+    const control = controls[id]
+    if (!control) throw Error(`No control named ${id}`)
+    return control
   }
 
   /**
@@ -192,7 +216,7 @@ class UVCControl extends EventEmitter {
    */
   set(id, ...values) {
     return new Promise((resolve, reject) => {
-      const control = controls[id]
+      const control = this.getControl(id)
       const params = this.getControlParams(id)
       const data = Buffer.alloc(params.wLength)
       control.fields.forEach((field, i) => {

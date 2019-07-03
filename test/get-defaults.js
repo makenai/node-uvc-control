@@ -11,6 +11,6 @@ if (name === 'all') {
 }
 controlNames.forEach(name => {
   cam.getDefault(name).then(def => {
-    console.log(name, def)
+    console.log('default', name, def)
   }).catch(err => console.log(err))
 })
