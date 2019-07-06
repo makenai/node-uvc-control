@@ -225,7 +225,7 @@ class UVCControl extends EventEmitter {
 
       this.device.controlTransfer(BM_REQUEST_TYPE.SET, REQUEST.SET_CUR, params.wValue, params.wIndex, data, (err) => {
         if (err) reject(err)
-        else resolve(value)
+        else resolve(values)
       })
     })
   }
@@ -241,14 +241,16 @@ class UVCControl extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       const params = this.getControlParams(id)
+      const byteLength = 2
+      // TODO support controls with multiple fields
       // TODO promise wrapper for controlTransfer so we can do parallel requests
-      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, params.wLength, (error, min) => {
+      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, byteLength, (error, min) => {
         if (error) return reject(error)
-        this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, params.wLength, (error, max) => {
+        this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, byteLength, (error, max) => {
           if (error) return reject(error)
           resolve({
-            min: min.readIntLE(0, params.wLength),
-            max: max.readIntLE(0, params.wLength)
+            min: min.readIntLE(0, byteLength),
+            max: max.readIntLE(0, byteLength),
           })
         })
       })

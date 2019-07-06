@@ -1,0 +1,133 @@
+<html>
+
+<head>
+
+  <style>
+    body {
+      background: #555;
+    }
+
+    video {
+      object-fit: contain;
+      width: 80%;
+      height: 80%;
+      position: absolute;
+      top: 10%;
+      left: 10%;
+    }
+
+    .cam-controls {
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .cam-controls .ctrl {
+      margin-bottom: 10px;
+    }
+
+    .cam-controls label {
+      display: block;
+    }
+  </style>
+
+</head>
+
+<body>
+  <video muted autoplay></video>
+  <div class="controls">
+    <select name="camera" id="cam"></select>
+    <div class="cam-controls"></div>
+  </div>
+  <script>
+    const REQUEST = {
+      RC_UNDEFINED: 0x00,
+      SET_CUR: 0x01,
+      GET_CUR: 0x81,
+      GET_MIN: 0x82,
+      GET_MAX: 0x83,
+      GET_RES: 0x84,
+      GET_LEN: 0x85,
+      GET_INFO: 0x86,
+      GET_DEF: 0x87,
+    }
+
+    const video = document.querySelector('video')
+    const camSelector = document.querySelector('select')
+    const camControls = document.querySelector('.cam-controls')
+
+    async function setup() {
+      let devices
+
+      async function initCamera(deviceId) {
+        if (video.srcObject) {
+          video.srcObject.getVideoTracks()[0].stop()
+        }
+        const constraints = {
+          video: {
+            deviceId: {
+              exact: deviceId,
+            }
+          },
+          audio: false,
+        }
+        const stream = await navigator.mediaDevices.getUserMedia(constraints)
+        video.srcObject = stream
+      }
+      initCamera()
+
+      const _devices = await navigator.mediaDevices.enumerateDevices()
+      devices = _devices.filter(device => device.kind === 'videoinput')
+      camSelector.innerHTML = devices.map(device => `<option value=${device.deviceId}>${device.label}</option>`)
+      console.log(devices)
+
+      camSelector.addEventListener('change', (e) => {
+        initCamera(camSelector.value)
+      })
+
+      const supportedControls = await fetch('/supported-controls').then(res => res.json())
+      const controlDescriptions = await Promise.all(supportedControls.map(name => {
+        return fetch(`/describe/${name}`).then(res => res.json())
+      }))
+      console.log(controlDescriptions)
+
+      const camControlsHTML = await Promise.all(controlDescriptions.map(async ctrl => {
+        // TODO support controls with multiple fields
+
+        let currentVal = await fetch(`/get/${ctrl.name}`).then(res => res.json())
+        currentVal = Object.values(currentVal)[0]
+        console.log('currentVal', ctrl.name, currentVal)
+
+        if (ctrl.requests.indexOf(REQUEST.GET_MIN) !== -1) {
+          // range
+          console.log('range', ctrl.name)
+          try {
+            const minMax = await fetch(`/range/${ctrl.name}`).then(res => res.json())
+            console.log(minMax)
+            const id = ctrl.name
+            return `<div class='range ctrl'><label for='${id}'>${ctrl.name}</label><input id='${id}' type='range' min='${minMax.min}' max='${minMax.max}' value='${currentVal}'></input></div>`
+          } catch (e) {
+            return ''
+          }
+        } else {
+          return ''
+        }
+      }))
+      camControls.innerHTML = camControlsHTML.join('')
+
+      // TODO options controls
+
+      document.querySelectorAll('.range.ctrl input').forEach(ctrlEl => {
+        ctrlEl.addEventListener('change', (e) => {
+          console.log(ctrlEl.id, ctrlEl.value)
+          fetch(`/set/${ctrlEl.id}/${ctrlEl.value}`, {
+            method: 'POST'
+          })
+        })
+      })
+    }
+    setup()
+  </script>
+</body>
+
+</html>
