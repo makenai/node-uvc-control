@@ -16,8 +16,9 @@
       left: 10%;
     }
 
-    .cam-controls {
+    .controls {
       height: 100%;
+      width: 240px;
       overflow-y: auto;
       overflow-x: hidden;
     }
@@ -95,27 +96,34 @@
         // TODO support controls with multiple fields
 
         let currentVal = await fetch(`/get/${ctrl.name}`).then(res => res.json())
-        currentVal = Object.values(currentVal)[0]
         console.log('currentVal', ctrl.name, currentVal)
+
+        currentVal = Object.values(currentVal)[0]
+        // console.log(ctrl.fields[0].type)
 
         if (ctrl.requests.indexOf(REQUEST.GET_MIN) !== -1) {
           // range
-          console.log('range', ctrl.name)
+          // console.log('range', ctrl.name)
           try {
             const minMax = await fetch(`/range/${ctrl.name}`).then(res => res.json())
-            console.log(minMax)
-            const id = ctrl.name
-            return `<div class='range ctrl'><label for='${id}'>${ctrl.name}</label><input id='${id}' type='range' min='${minMax.min}' max='${minMax.max}' value='${currentVal}'></input></div>`
+            return `<div class='range ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><input id='${ctrl.name}' type='range' min='${minMax.min}' max='${minMax.max}' value='${currentVal}'></input></div>`
           } catch (e) {
             return ''
           }
+        } else if (ctrl.fields[0].options) {
+
+          let options = Object.entries(ctrl.fields[0].options).map(([key, val]) =>
+            `<option value='${val}'>${key}</option>`)
+          // TODO set selected index
+          return `<div class='select ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><select id='${ctrl.name}'>${options}</select></input></div>`
+
+        } else if (ctrl.fields[0].type === 'Boolean') {
+          return `<div class='bool ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><input type='checkbox' id='${ctrl.name}' checked='${currentVal}'></div>`
         } else {
           return ''
         }
       }))
-      camControls.innerHTML = camControlsHTML.join('')
-
-      // TODO options controls
+      camControls.innerHTML += camControlsHTML.join('')
 
       document.querySelectorAll('.range.ctrl input').forEach(ctrlEl => {
         ctrlEl.addEventListener('change', (e) => {
@@ -125,6 +133,25 @@
           })
         })
       })
+
+      document.querySelectorAll('.select.ctrl select').forEach(ctrlEl => {
+        ctrlEl.addEventListener('change', (e) => {
+          console.log(ctrlEl.id, ctrlEl.value)
+          fetch(`/set/${ctrlEl.id}/${ctrlEl.value}`, {
+            method: 'POST'
+          })
+        })
+      })
+
+      document.querySelectorAll('.bool.ctrl input').forEach(ctrlEl => {
+        ctrlEl.addEventListener('change', (e) => {
+          console.log(ctrlEl.checked)
+          fetch(`/set/${ctrlEl.id}/${ctrlEl.checked ? 1 : 0}`, {
+            method: 'POST'
+          })
+        })
+      })
+
     }
     setup()
   </script>
