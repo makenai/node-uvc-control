@@ -7,6 +7,7 @@ const {
   // VS,
   // VS_DESCRIPTOR_SUBTYPE,
   BM_REQUEST_TYPE,
+  FIELD_TYPE,
   REQUEST,
   KEY,
 } = require('./lib/constants')
@@ -181,7 +182,7 @@ class UVCControl extends EventEmitter {
           // NOTE min fixes out of bounds error, but this approach doesn't account for multiple fields...
           let int = buffer.readIntLE(field.offset, Math.min(buffer.byteLength, field.size))
           let result = int
-          if (field.type === 'Boolean') {
+          if (field.type === FIELD_TYPE.BOOLEAN) {
             result = Boolean(int)
           }
           const results = {

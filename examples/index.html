@@ -53,6 +53,12 @@
       GET_DEF: 0x87,
     }
 
+    const FIELD_TYPE = {
+      BOOLEAN: 'BOOLEAN',
+      BITMAP: 'BITMAP',
+      NUMBER: 'NUMBER',
+    }
+
     const video = document.querySelector('video')
     const camSelector = document.querySelector('select')
     const camControls = document.querySelector('.cam-controls')
@@ -93,65 +99,100 @@
       console.log(controlDescriptions)
 
       const camControlsHTML = await Promise.all(controlDescriptions.map(async ctrl => {
-        // TODO support controls with multiple fields
 
         let currentVal = await fetch(`/get/${ctrl.name}`).then(res => res.json())
         console.log('currentVal', ctrl.name, currentVal)
 
-        currentVal = Object.values(currentVal)[0]
-        // console.log(ctrl.fields[0].type)
+        const fieldControlsHTML = await Promise.all(ctrl.fields.map(async (field, i) => {
+          // console.log(field)
+          const fieldVal = currentVal[field.name]
+          const id = `${ctrl.name}-${field.name}`
 
-        if (ctrl.requests.indexOf(REQUEST.GET_MIN) !== -1) {
-          // range
-          // console.log('range', ctrl.name)
-          try {
-            const minMax = await fetch(`/range/${ctrl.name}`).then(res => res.json())
-            return `<div class='range ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><input id='${ctrl.name}' type='range' min='${minMax.min}' max='${minMax.max}' value='${currentVal}'></input></div>`
-          } catch (e) {
+          if (ctrl.requests.indexOf(REQUEST.GET_MIN) !== -1) {
+            try {
+              const minMax = await fetch(`/range/${ctrl.name}`).then(res => res.json())
+              return `<div class='range ctrl'><label for='${id}'>${field.name}</label><input id='${id}' type='range' min='${minMax.min}' max='${minMax.max}' value='${fieldVal}'></input></div>`
+            } catch (e) {
+              return ''
+            }
+          } else if (field.options) {
+
+            let options = Object.entries(field.options).map(([key, val]) => {
+              const selected = fieldVal === val ? 'selected' : ''
+              return `<option value='${val}' ${selected}>${key}</option>`
+            })
+            return `<div class='select ctrl'><label for='${id}'>${field.name}</label><select id='${id}'>${options}</select></input></div>`
+
+          } else if (field.type === FIELD_TYPE.BOOLEAN) {
+            return `<div class='bool ctrl'><label for='${id}'>${field.name}</label><input type='checkbox' id='${id}' checked='${fieldVal}'></div>`
+          } else {
             return ''
           }
-        } else if (ctrl.fields[0].options) {
 
-          let options = Object.entries(ctrl.fields[0].options).map(([key, val]) =>
-            `<option value='${val}'>${key}</option>`)
-          // TODO set selected index
-          return `<div class='select ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><select id='${ctrl.name}'>${options}</select></input></div>`
+        }))
+        return `<div id='${ctrl.name}'><h3>${ctrl.name}</h3>${fieldControlsHTML.join('')}</div>`
 
-        } else if (ctrl.fields[0].type === 'Boolean') {
-          return `<div class='bool ctrl'><label for='${ctrl.name}'>${ctrl.name}</label><input type='checkbox' id='${ctrl.name}' checked='${currentVal}'></div>`
-        } else {
-          return ''
-        }
       }))
       camControls.innerHTML += camControlsHTML.join('')
 
-      document.querySelectorAll('.range.ctrl input').forEach(ctrlEl => {
+      const listenForFieldControlChanges = (ctrlEl) => {
         ctrlEl.addEventListener('change', (e) => {
           console.log(ctrlEl.id, ctrlEl.value)
-          fetch(`/set/${ctrlEl.id}/${ctrlEl.value}`, {
+          const [controlId] = ctrlEl.id.split('-')
+          const values = getSiblingFieldValues(controlId).join()
+          fetch(`/set/${controlId}/${values}`, {
             method: 'POST'
           })
         })
-      })
+      }
+      document.querySelectorAll('.range.ctrl input').forEach(listenForFieldControlChanges)
+      document.querySelectorAll('.select.ctrl select').forEach(listenForFieldControlChanges)
+      document.querySelectorAll('.bool.ctrl input').forEach(listenForFieldControlChanges)
 
-      document.querySelectorAll('.select.ctrl select').forEach(ctrlEl => {
-        ctrlEl.addEventListener('change', (e) => {
-          console.log(ctrlEl.id, ctrlEl.value)
-          fetch(`/set/${ctrlEl.id}/${ctrlEl.value}`, {
-            method: 'POST'
-          })
-        })
-      })
+      // document.querySelectorAll('.range.ctrl input').forEach(ctrlEl => {
+      //   ctrlEl.addEventListener('change', (e) => {
+      //     console.log(ctrlEl.id, ctrlEl.value)
+      //     const [controlId] = ctrlEl.id.split('-')
+      //     const values = getSiblingFieldValues(controlId).join()
+      //     fetch(`/set/${controlId}/${values}`, {
+      //       method: 'POST'
+      //     })
+      //   })
+      // })
 
-      document.querySelectorAll('.bool.ctrl input').forEach(ctrlEl => {
-        ctrlEl.addEventListener('change', (e) => {
-          console.log(ctrlEl.checked)
-          fetch(`/set/${ctrlEl.id}/${ctrlEl.checked ? 1 : 0}`, {
-            method: 'POST'
-          })
-        })
-      })
+      // document.querySelectorAll('.select.ctrl select').forEach(ctrlEl => {
+      //   ctrlEl.addEventListener('change', (e) => {
+      //     console.log(ctrlEl.id, ctrlEl.value)
+      //     const [controlId] = ctrlEl.id.split('-')
+      //     const values = getSiblingFieldValues(controlId).join()
+      //     fetch(`/set/${controlId}/${values}`, {
+      //       method: 'POST'
+      //     })
+      //   })
+      // })
 
+      // document.querySelectorAll('.bool.ctrl input').forEach(ctrlEl => {
+      //   ctrlEl.addEventListener('change', (e) => {
+      //     console.log(ctrlEl.checked)
+      //     const [controlId] = ctrlEl.id.split('-')
+      //     const values = getSiblingFieldValues(controlId).join()
+      //     fetch(`/set/${controlId}/${values}`, {
+      //       method: 'POST'
+      //     })
+      //   })
+      // })
+
+    }
+
+    function getSiblingFieldValues(controlId) {
+      const controlDiv = document.querySelector(`#${controlId}`)
+      const values = []
+      controlDiv.querySelectorAll('.ctrl').forEach(ctrl => {
+        const input = ctrl.querySelector('input, select')
+        if (input.type === 'checkbox') values.push(input.checked ? 1 : 0)
+        else values.push(input.value)
+      })
+      return values
     }
     setup()
   </script>
