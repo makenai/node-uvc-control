@@ -39,11 +39,6 @@ app.get('/range/:control', (req, res) => {
 
 app.post('/set/:control/:values', (req, res) => {
   let values = req.params.values.split(',')
-  // values = values.map(val => {
-  //   if (val === 'true') return 1
-  //   else if (val === 'false') return 0
-  //   else return val
-  // })
   console.log('setting', req.params.control, values)
   cam.set(req.params.control, ...values).then(vals => {
     res.send('ok')
