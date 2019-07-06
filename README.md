@@ -19,10 +19,10 @@ camera.set('brightness', 100).then(() => console.log('Brightness set!'))
 
 ## Finding Your vendorId / productId
 
-Use list-devices.js to find the right paramters.
+Use test/discover.js to find the right paramters.
 
 ```
-$ node list-devices.js
+$ node test/discover.js
 [ { name: 'Logitech BRIO',
     vendorId: 1133,
     productId: 2142,
