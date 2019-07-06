@@ -2,15 +2,20 @@
 
 /*
   List default values
-  TODO implement GET_DEF to actually get defaults. returns current values, currently
 */
 
 const UVCControl = require('../index')
 const cam = new UVCControl()
-const controls = Object.entries(UVCControl.controls)
+const supportedControls = cam.supportedControls.filter(name => {
+  const control = UVCControl.controls[name]
+  return control.requests.indexOf(UVCControl.REQUEST.GET_DEF) !== -1
+})
+console.log(supportedControls)
 const run = async () => {
-  // while (controls.length) {
-
-  // }
+  supportedControls.forEach((name) => {
+    cam.getDefault(name)
+      .then(def => console.log(def))
+      .catch(err => console.error(err))
+  })
 }
 run()
