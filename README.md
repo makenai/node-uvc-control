@@ -125,7 +125,7 @@ You can find the full list of specs at the USB Implmentors Forum. Look for a doc
 
 To debug the USB descriptors, open chrome://usb-internals in Chrome
 
-On Raspberry Pi, you need to run node as root in order to access USB devices. Alternatively, you can add a udev rule to grant access to the default user, as described in [this AskUbuntu answer](https://askubuntu.com/questions/978552/how-do-i-make-libusb-work-as-non-root).
+On Raspberry Pi, you need to run node as root in order to access USB devices. If you don't have access, you'll get a `LIBUSB_ERROR_IO` error on initialization. Alternatively, you can add a udev rule to grant access to the default user, as described in [this AskUbuntu answer](https://askubuntu.com/questions/978552/how-do-i-make-libusb-work-as-non-root).
 
 Pull requests and testers welcome!
 
