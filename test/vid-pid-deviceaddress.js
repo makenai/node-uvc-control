@@ -25,6 +25,8 @@ if (cam.device.deviceAddress !== deviceAddress) console.error(`Input device addr
 
 console.log(cam)
 
-UVCControl.controls.map(name => {
-  cam.get(name).then(val => console.log(name, val))
+Object.keys(UVCControl.controls).map(name => {
+  cam.get(name).then(val => {
+    console.log(name, val)
+  }).catch(error => console.error(name, error))
 })

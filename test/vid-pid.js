@@ -21,9 +21,8 @@ if (cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product 
 
 console.log(cam)
 
-UVCControl.controls.map(name => {
-  cam.get(name, (err, val) => {
-    if (err) throw err
+Object.keys(UVCControl.controls).map(name => {
+  cam.get(name).then(val => {
     console.log(name, val)
-  })
+  }).catch(error => console.error(name, error))
 })
