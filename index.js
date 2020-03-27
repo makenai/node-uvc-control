@@ -82,7 +82,7 @@ class UVCControl extends EventEmitter {
 
     const controlType = {
       PU: 'processingUnit',
-      CT: 'inputTerminal',
+      CT: 'cameraInputTerminal',
       // VS: 'videoStream',
     } [control.type]
     const unit = this.ids[controlType]
