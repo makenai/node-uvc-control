@@ -238,21 +238,31 @@ class UVCControl extends EventEmitter {
       throw Error('range request not supported for ', id)
     }
 
-    return new Promise((resolve, reject) => {
-      const params = this.getControlParams(id)
-      const byteLength = 2
-      // TODO support controls with multiple fields
-      // TODO promise wrapper for controlTransfer so we can do parallel requests
-      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, byteLength, (error, min) => {
+    let min
+    let max
+
+    const params = this.getControlParams(id)
+    const byteLength = control.wLength
+    const size = control.fields[0].size
+
+    // TODO promise wrapper for controlTransfer so we can do parallel requests
+    return new Promise((resolve, reject) => this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, byteLength, (error, buffer) => {
         if (error) return reject(error)
-        this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, byteLength, (error, max) => {
-          if (error) return reject(error)
-          resolve({
-            min: min.readIntLE(0, byteLength),
-            max: max.readIntLE(0, byteLength),
-          })
-        })
-      })
+        else {
+          min = readInts(buffer, byteLength, size)
+          resolve()
+        }
+      })).then(() => new Promise((resolve, reject) => this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, byteLength, (error, buffer) => {
+      if (error) return reject(error)
+      else {
+        max = readInts(buffer, byteLength, size)
+        resolve()
+      }
+    }))).then(() => {
+      return {
+        min: min,
+        max: max,
+      }
     })
   }
 }
@@ -444,5 +454,37 @@ function getInterfaceDescriptors(device) {
 }
 
 const bitmask = (int) => int.toString(2).split('').reverse().map(i => parseInt(i))
+
+function readInts(buffer, length, fieldSize) {
+  if((length%fieldSize)!==0) throw new Error("Not equal-sized fields.");
+  var output=[];
+  for (var i=0;i<length/fieldSize;i++) {
+    output.push(readInt(Buffer.concat([buffer, Buffer.alloc((i+1)*fieldSize)]).slice(i*fieldSize, (i+1)*fieldSize), fieldSize));
+  }
+  if (output.length === 1) {
+    return output[0];
+  }
+  return output;
+}
+
+function readInt(buffer, length) {
+  if (length === 8) {
+    var low = 0 & 0xffffffff
+    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
+    return buffer.readIntLE(low) + buffer.readUIntLE(high, 4)
+  } else {
+    return buffer.readIntLE(0, length)
+  }
+}
+
+function writeInt(buffer, value, length) {
+  if (length === 8) {
+    var low = 0 & 0xffffffff
+    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
+    return buffer.writeIntLE(value, low) + buffer.writeUIntLE(value, high, 4)
+  } else {
+    return buffer.writeIntLE(value, 0, length)
+  }
+}
 
 module.exports = UVCControl
