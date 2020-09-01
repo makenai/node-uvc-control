@@ -120,8 +120,6 @@ class UVCControl extends EventEmitter {
           // console.log(field.name, field.offset, field.size, buffer.byteLength)
           // sometimes the field doesn't take up the space it has
           const size = Math.min(field.size, buffer.byteLength)
-          // sometimes the field isn't there...?
-          if (field.offset === field.size) return
           fields[field.name] = buffer.readIntLE(field.offset, size)
         })
         resolve(fields)
