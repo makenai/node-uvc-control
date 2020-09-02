@@ -1,3 +1,24 @@
+<p align="center">
+  <a href="https://joelpurra.com/projects/uvcc/"><img src="https://files.joelpurra.com/projects/uvcc/demo/2020-09-02/uvcc-demo.2020-09-02.gif" alt="uvcc demo video showing rubber ducks and a candle with varying camera settings" width="480" height="270" border="0" /></a>
+</p>
+
+# Fork of [`uvc-control`](https://github.com/makenai/node-uvc-control) for [`uvcc`](https://joelpurra.com/projects/uvcc/)
+
+This fork has important bugfixes and improvements required for the _USB Video Class (UVC) device configurator_ [`uvcc`](https://joelpurra.com/projects/uvcc/) to work properly. It was based on the [`master`](https://github.com/makenai/node-uvc-control/commit/master) ([`ca1e2c9`](https://github.com/makenai/node-uvc-control/commit/ca1e2c963e98b309ad3b65c5fc538f052ea5fd64)) branch of [`uvc-control`](https://github.com/makenai/node-uvc-control) from 2019-07-07; see the [`v2`](https://github.com/joelpurra/node-uvc-control/commits/v2) branch for [changes](https://github.com/makenai/node-uvc-control/compare/master...joelpurra:v2).
+
+The stability of this fork is not guaranteed. Branches can be force-pushed and broken; if and when this fork gets [merged upstream](https://github.com/makenai/node-uvc-control/pull/66) it will be deleted.
+
+See
+
+- https://github.com/makenai/node-uvc-control/pull/66
+- https://github.com/joelpurra/node-uvc-control/commits/v2
+- https://github.com/joelpurra/node-uvc-control/tree/v2
+- https://github.com/makenai/node-uvc-control/compare/master...joelpurra:v2
+- https://github.com/makenai/node-uvc-control/commit/master
+- https://github.com/makenai/node-uvc-control/commit/ca1e2c963e98b309ad3b65c5fc538f052ea5fd64
+
+---
+
 # uvc-control
 
 Control a USB Video Class compliant webcam from node. Most modern USB webcams use a common set of controls standardized by the USB Implementers Forum. You can use this set of controls to change certain things on the camera, such as the brightness, contrast, zoom level, focus and so on.
