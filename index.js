@@ -310,7 +310,11 @@ UVCControl.validate = (device) => {
   return new Promise((resolve, reject) => {
 
     if (device.deviceDescriptor.iProduct) {
-      device.open()
+      try {
+        device.open()
+      } catch(error) {
+        resolve(false)
+      }
 
       // http://www.usb.org/developers/defined_class/#BaseClass10h
       if (isWebcam(device)) {
