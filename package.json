@@ -32,7 +32,7 @@
     "usb": "^1.6.3"
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   },
   "devDependencies": {
     "express": "^4.17.1",
