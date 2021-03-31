@@ -9,9 +9,9 @@
 */
 
 const UVCControl = require('../index')
-const vid = parseInt(process.argv[2]) || 1133
-const pid = parseInt(process.argv[3]) || 2142
-const deviceAddress = parseInt(process.argv[4]) || 25
+const vid = parseInt(process.argv[2]) || 0
+const pid = parseInt(process.argv[3]) || 0
+const deviceAddress = parseInt(process.argv[4]) || 0
 
 const cam = new UVCControl({
   vid: vid,

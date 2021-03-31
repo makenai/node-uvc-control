@@ -52,6 +52,14 @@ class UVCControl extends EventEmitter {
           device.deviceDescriptor.idVendor === this.options.vid
       })[0]
 
+    } else if (this.options.pid) {
+
+      // find a camera that matches the product id
+      this.device = usb.getDeviceList().filter((device) => {
+        return isWebcam(device) &&
+          device.deviceDescriptor.idProduct === this.options.pid
+      })[0]
+
     } else {
 
       // no options... use the first camera in the device list
