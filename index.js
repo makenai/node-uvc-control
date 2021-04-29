@@ -24,11 +24,12 @@ class UVCControl extends EventEmitter {
   }
 
   init() {
+    const deviceList = usb.getDeviceList();
 
     if (this.options.vid && this.options.pid && this.options.deviceAddress) {
 
       // find cam with vid / pid / deviceAddress
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid &&
           device.deviceDescriptor.idProduct === this.options.pid &&
@@ -38,7 +39,7 @@ class UVCControl extends EventEmitter {
     } else if (this.options.vid && this.options.pid) {
 
       // find a camera that matches the vid / pid
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid &&
           device.deviceDescriptor.idProduct === this.options.pid
@@ -47,7 +48,7 @@ class UVCControl extends EventEmitter {
     } else if (this.options.vid) {
 
       // find a camera that matches the vendor id
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid
       })[0]
@@ -55,7 +56,7 @@ class UVCControl extends EventEmitter {
     } else if (this.options.pid) {
 
       // find a camera that matches the product id
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idProduct === this.options.pid
       })[0]
@@ -63,7 +64,7 @@ class UVCControl extends EventEmitter {
     } else if (this.options.deviceAddress) {
 
       // find a camera that matches the deviceAddress
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceAddress === this.options.deviceAddress
       })[0]
@@ -71,7 +72,7 @@ class UVCControl extends EventEmitter {
     } else {
 
       // no options... use the first camera in the device list
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device)
       })[0]
     }
