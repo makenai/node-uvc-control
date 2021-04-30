@@ -8,8 +8,8 @@
 */
 
 const UVCControl = require('../index')
-const vid = parseInt(process.argv[2]) || 1133
-const pid = parseInt(process.argv[3]) || 2142
+const vid = parseInt(process.argv[2]) || 0
+const pid = parseInt(process.argv[3]) || 0
 
 const cam = new UVCControl({
   vid: vid,
@@ -21,9 +21,8 @@ if (cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product 
 
 console.log(cam)
 
-UVCControl.controls.map(name => {
-  cam.get(name, (err, val) => {
-    if (err) throw err
+Object.keys(UVCControl.controls).map(name => {
+  cam.get(name).then(val => {
     console.log(name, val)
-  })
+  }).catch(error => console.error(name, error))
 })
