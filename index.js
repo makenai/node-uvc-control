@@ -1,4 +1,4 @@
-const usb = require('usb')
+const {usb, getDeviceList} = require('usb')
 const {
   SC,
   CC,
@@ -24,7 +24,7 @@ class UVCControl extends EventEmitter {
   }
 
   init() {
-    const deviceList = usb.getDeviceList();
+    const deviceList = getDeviceList();
 
     if (this.options.vid && this.options.pid && this.options.deviceAddress) {
 
@@ -296,7 +296,7 @@ UVCControl.REQUEST = REQUEST
  */
 UVCControl.discover = () => {
   return new Promise((resolve, reject) => {
-    var promises = usb.getDeviceList().map(UVCControl.validate)
+    var promises = getDeviceList().map(UVCControl.validate)
     Promise.all(promises).then(results => {
       resolve(results.filter(w => w)) // rm nulls
     }).catch(err => reject(err))
