@@ -308,11 +308,14 @@ UVCControl.discover = () => {
  * @param {object} device
  */
 UVCControl.validate = (device) => {
+  var open = false;
+
   return new Promise((resolve, reject) => {
 
     if (device.deviceDescriptor.iProduct) {
       try {
         device.open()
+        open = true;
       } catch(error) {
         resolve(false)
       }
@@ -321,12 +324,16 @@ UVCControl.validate = (device) => {
       if (isWebcam(device)) {
         device.getStringDescriptor(device.deviceDescriptor.iProduct, (error, deviceName) => {
           if (error) return reject(error)
-          device.close()
           device.name = deviceName
           resolve(device)
         })
       } else resolve(false)
     } else resolve(false)
+  }).then((result) => {
+    if (open) {
+      device.close()
+    }
+    return result
   })
 }
 
