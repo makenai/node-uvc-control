@@ -9,18 +9,25 @@
 */
 
 const UVCControl = require('../index')
-const deviceAddress = parseInt(process.argv[2]) || 0
 
-const cam = new UVCControl({
-  deviceAddress: deviceAddress
-})
+const run = async () => {
+  const deviceAddress = parseInt(process.argv[2]) || 0
 
-if (cam.device.deviceAddress !== deviceAddress) console.error(`Input device address (${deviceAddress}) does not match device address (${cam.device.deviceAddress})`)
+  const cam = new UVCControl({
+    deviceAddress: deviceAddress
+  })
 
-console.log(cam)
+  if (cam.device.deviceAddress !== deviceAddress) console.error(`Input device address (${deviceAddress}) does not match device address (${cam.device.deviceAddress})`)
 
-Object.keys(UVCControl.controls).map(name => {
-  cam.get(name).then(val => {
-    console.log(name, val)
-  }).catch(error => console.error(name, error))
-})
+  console.log(cam)
+
+  for (const name of Object.keys(UVCControl.controls)) {
+    await cam.get(name).then(val => {
+      console.log(name, val)
+    }).catch(error => console.error(name, error))
+  }
+
+  cam.close()
+}
+
+run()

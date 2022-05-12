@@ -8,18 +8,25 @@
 */
 
 const UVCControl = require('../index')
-const vid = parseInt(process.argv[2]) || 0
 
-const cam = new UVCControl({
-  vid: vid
-})
+const run = async () => {
+  const vid = parseInt(process.argv[2]) || 0
 
-if (cam.device.deviceDescriptor.idVendor !== vid) console.error(`Input vendor ID (${vid}) does not match device vendor ID (${cam.device.deviceDescriptor.idVendor})`)
+  const cam = new UVCControl({
+    vid: vid
+  })
 
-console.log(cam)
+  if (cam.device.deviceDescriptor.idVendor !== vid) console.error(`Input vendor ID (${vid}) does not match device vendor ID (${cam.device.deviceDescriptor.idVendor})`)
 
-Object.keys(UVCControl.controls).map(name => {
-  cam.get(name).then(val => {
-    console.log(name, val)
-  }).catch(error => console.error(name, error))
-})
+  console.log(cam)
+
+  for (const name of Object.keys(UVCControl.controls)) {
+    await cam.get(name).then(val => {
+      console.log(name, val)
+    }).catch(error => console.error(name, error))
+  }
+
+  cam.close()
+}
+
+run()

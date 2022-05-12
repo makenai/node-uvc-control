@@ -8,18 +8,25 @@
 */
 
 const UVCControl = require('../index')
-const pid = parseInt(process.argv[2]) || 0
 
-const cam = new UVCControl({
-  pid: pid
-})
+const run = async () => {
+  const pid = parseInt(process.argv[2]) || 0
 
-if (cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product ID (${pid}) does not match device product ID (${cam.device.deviceDescriptor.idProduct})`)
+  const cam = new UVCControl({
+    pid: pid
+  })
 
-console.log(cam)
+  if (cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product ID (${pid}) does not match device product ID (${cam.device.deviceDescriptor.idProduct})`)
 
-Object.keys(UVCControl.controls).map(name => {
-  cam.get(name).then(val => {
-    console.log(name, val)
-  }).catch(error => console.error(name, error))
-})
+  console.log(cam)
+
+  for (const name of Object.keys(UVCControl.controls)) {
+    await cam.get(name).then(val => {
+      console.log(name, val)
+    }).catch(error => console.error(name, error))
+  }
+
+  cam.close()
+}
+
+run()

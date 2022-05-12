@@ -5,17 +5,20 @@
 */
 
 const UVCControl = require('../index')
-const cam = new UVCControl()
-const supportedControls = cam.supportedControls.filter(name => {
-  const control = UVCControl.controls[name]
-  return control.requests.indexOf(UVCControl.REQUEST.GET_DEF) !== -1
-})
-console.log(supportedControls)
+
 const run = async () => {
-  supportedControls.forEach((name) => {
-    cam.getDefault(name)
+  const cam = new UVCControl()
+  const supportedControls = cam.supportedControls.filter(name => {
+    const control = UVCControl.controls[name]
+    return control.requests.indexOf(UVCControl.REQUEST.GET_DEF) !== -1
+  })
+  console.log(supportedControls)
+  for (const name of supportedControls){
+    await cam.getDefault(name)
       .then(def => console.log(def))
       .catch(err => console.error(err))
-  })
+  }
+  cam.close()
 }
+
 run()
