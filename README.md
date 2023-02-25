@@ -39,7 +39,7 @@ camera.get('autoFocus').then(value) => console.log('AutoFocus setting:', value))
 camera.set('brightness', 100).then(() => console.log('Brightness set!'))
 ```
 
-For an interactive demo, run `npm run serve` and open http://localhost:3000.
+For an interactive demo, run `npm start` in `./examples/server/` and open: http://localhost:3000/
 
 ## Finding Your vendorId / productId
 
