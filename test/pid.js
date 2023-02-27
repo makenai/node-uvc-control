@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 
 /*
-  Get a device based on vendor ID
+  Get a device based on product ID
   These values can be found by running ./discover.js
 
-  Usage: ./test/vid.js 1133
+  Usage: ./test/pid.js 2142
 */
 
 const UVCControl = require('../index')
 
 const run = async () => {
-  const vid = parseInt(process.argv[2]) || 0
+  const pid = parseInt(process.argv[2]) || 0
 
   const cam = new UVCControl({
-    vid: vid
+    pid: pid
   })
 
-  if (cam.device.deviceDescriptor.idVendor !== vid) console.error(`Input vendor ID (${vid}) does not match device vendor ID (${cam.device.deviceDescriptor.idVendor})`)
+  if (cam.device.deviceDescriptor.idProduct !== pid) console.error(`Input product ID (${pid}) does not match device product ID (${cam.device.deviceDescriptor.idProduct})`)
 
   console.log(cam)
 

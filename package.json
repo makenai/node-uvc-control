@@ -3,9 +3,6 @@
   "version": "2.0.0",
   "description": "Control UVC compliant webcams from node",
   "main": "index.js",
-  "scripts": {
-    "preview": "node ./examples/server.js"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/makenai/node-uvc-control.git"
@@ -21,7 +18,8 @@
   ],
   "author": "Pawel Szymczykowski <makenai@gmail.com>",
   "contributors": [
-    "Josh Beckwith <josh.beckwith@gmail.com> (https://github.com/positlabs/)"
+    "Josh Beckwith <josh.beckwith@gmail.com> (https://github.com/positlabs/)",
+    "Joel Purra <mig@joelpurra.se> (https://joelpurra.com/)"
   ],
   "license": "ISC",
   "bugs": {
@@ -29,13 +27,9 @@
   },
   "homepage": "https://github.com/makenai/node-uvc-control#readme",
   "dependencies": {
-    "usb": "^1.1.2"
+    "usb": "^2.8.0"
   },
   "engines": {
-    "node": ">=8"
-  },
-  "devDependencies": {
-    "express": "^4.17.1",
-    "serve": "^11.0.2"
+    "node": ">=12"
   }
 }

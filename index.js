@@ -1,4 +1,4 @@
-const usb = require('usb')
+const {usb, getDeviceList} = require('usb')
 const {
   SC,
   CC,
@@ -24,11 +24,12 @@ class UVCControl extends EventEmitter {
   }
 
   init() {
+    const deviceList = getDeviceList();
 
     if (this.options.vid && this.options.pid && this.options.deviceAddress) {
 
       // find cam with vid / pid / deviceAddress
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid &&
           device.deviceDescriptor.idProduct === this.options.pid &&
@@ -38,7 +39,7 @@ class UVCControl extends EventEmitter {
     } else if (this.options.vid && this.options.pid) {
 
       // find a camera that matches the vid / pid
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid &&
           device.deviceDescriptor.idProduct === this.options.pid
@@ -47,15 +48,31 @@ class UVCControl extends EventEmitter {
     } else if (this.options.vid) {
 
       // find a camera that matches the vendor id
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device) &&
           device.deviceDescriptor.idVendor === this.options.vid
+      })[0]
+
+    } else if (this.options.pid) {
+
+      // find a camera that matches the product id
+      this.device = deviceList.filter((device) => {
+        return isWebcam(device) &&
+          device.deviceDescriptor.idProduct === this.options.pid
+      })[0]
+
+    } else if (this.options.deviceAddress) {
+
+      // find a camera that matches the deviceAddress
+      this.device = deviceList.filter((device) => {
+        return isWebcam(device) &&
+          device.deviceAddress === this.options.deviceAddress
       })[0]
 
     } else {
 
       // no options... use the first camera in the device list
-      this.device = usb.getDeviceList().filter((device) => {
+      this.device = deviceList.filter((device) => {
         return isWebcam(device)
       })[0]
     }
@@ -82,7 +99,7 @@ class UVCControl extends EventEmitter {
 
     const controlType = {
       PU: 'processingUnit',
-      CT: 'inputTerminal',
+      CT: 'cameraInputTerminal',
       // VS: 'videoStream',
     } [control.type]
     const unit = this.ids[controlType]
@@ -120,8 +137,6 @@ class UVCControl extends EventEmitter {
           // console.log(field.name, field.offset, field.size, buffer.byteLength)
           // sometimes the field doesn't take up the space it has
           const size = Math.min(field.size, buffer.byteLength)
-          // sometimes the field isn't there...?
-          if (field.offset === field.size) return
           fields[field.name] = buffer.readIntLE(field.offset, size)
         })
         resolve(fields)
@@ -240,21 +255,31 @@ class UVCControl extends EventEmitter {
       throw Error('range request not supported for ', id)
     }
 
-    return new Promise((resolve, reject) => {
-      const params = this.getControlParams(id)
-      const byteLength = 2
-      // TODO support controls with multiple fields
-      // TODO promise wrapper for controlTransfer so we can do parallel requests
-      this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, byteLength, (error, min) => {
+    let min
+    let max
+
+    const params = this.getControlParams(id)
+    const byteLength = control.wLength
+    const size = control.fields[0].size
+
+    // TODO promise wrapper for controlTransfer so we can do parallel requests
+    return new Promise((resolve, reject) => this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MIN, params.wValue, params.wIndex, byteLength, (error, buffer) => {
         if (error) return reject(error)
-        this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, byteLength, (error, max) => {
-          if (error) return reject(error)
-          resolve({
-            min: min.readIntLE(0, byteLength),
-            max: max.readIntLE(0, byteLength),
-          })
-        })
-      })
+        else {
+          min = readInts(buffer, byteLength, size)
+          resolve()
+        }
+      })).then(() => new Promise((resolve, reject) => this.device.controlTransfer(BM_REQUEST_TYPE.GET, REQUEST.GET_MAX, params.wValue, params.wIndex, byteLength, (error, buffer) => {
+      if (error) return reject(error)
+      else {
+        max = readInts(buffer, byteLength, size)
+        resolve()
+      }
+    }))).then(() => {
+      return {
+        min: min,
+        max: max,
+      }
     })
   }
 }
@@ -271,7 +296,7 @@ UVCControl.REQUEST = REQUEST
  */
 UVCControl.discover = () => {
   return new Promise((resolve, reject) => {
-    var promises = usb.getDeviceList().map(UVCControl.validate)
+    var promises = getDeviceList().map(UVCControl.validate)
     Promise.all(promises).then(results => {
       resolve(results.filter(w => w)) // rm nulls
     }).catch(err => reject(err))
@@ -283,21 +308,32 @@ UVCControl.discover = () => {
  * @param {object} device
  */
 UVCControl.validate = (device) => {
+  var open = false;
+
   return new Promise((resolve, reject) => {
 
     if (device.deviceDescriptor.iProduct) {
-      device.open()
+      try {
+        device.open()
+        open = true;
+      } catch(error) {
+        resolve(false)
+      }
 
       // http://www.usb.org/developers/defined_class/#BaseClass10h
       if (isWebcam(device)) {
         device.getStringDescriptor(device.deviceDescriptor.iProduct, (error, deviceName) => {
           if (error) return reject(error)
-          device.close()
           device.name = deviceName
           resolve(device)
         })
       } else resolve(false)
     } else resolve(false)
+  }).then((result) => {
+    if (open) {
+      device.close()
+    }
+    return result
   })
 }
 
@@ -446,5 +482,37 @@ function getInterfaceDescriptors(device) {
 }
 
 const bitmask = (int) => int.toString(2).split('').reverse().map(i => parseInt(i))
+
+function readInts(buffer, length, fieldSize) {
+  if((length%fieldSize)!==0) throw new Error("Not equal-sized fields.");
+  var output=[];
+  for (var i=0;i<length/fieldSize;i++) {
+    output.push(readInt(Buffer.concat([buffer, Buffer.alloc((i+1)*fieldSize)]).slice(i*fieldSize, (i+1)*fieldSize), fieldSize));
+  }
+  if (output.length === 1) {
+    return output[0];
+  }
+  return output;
+}
+
+function readInt(buffer, length) {
+  if (length === 8) {
+    var low = 0 & 0xffffffff
+    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
+    return buffer.readIntLE(low) + buffer.readUIntLE(high, 4)
+  } else {
+    return buffer.readIntLE(0, length)
+  }
+}
+
+function writeInt(buffer, value, length) {
+  if (length === 8) {
+    var low = 0 & 0xffffffff
+    var high = (0 - low) / 0x100000000 - (low < 0 ? 1 : 0)
+    return buffer.writeIntLE(value, low) + buffer.writeUIntLE(value, high, 4)
+  } else {
+    return buffer.writeIntLE(value, 0, length)
+  }
+}
 
 module.exports = UVCControl

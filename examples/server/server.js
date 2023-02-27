@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const port = 3000
-const UVCControl = require('../index')
+const UVCControl = require('../../')
 const cam = new UVCControl()
 
 app.get('/', (req, res) => {

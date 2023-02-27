@@ -1,22 +1,23 @@
 #!/usr/bin/env node
 
 /*
-  Get a device based on vendor ID
+  Get a device based on device address.
+  Unlikely to be used by itself, should be used with vendor and product id.
   These values can be found by running ./discover.js
 
-  Usage: ./test/vid.js 1133
+  Usage: ./test/deviceaddress.js 13
 */
 
 const UVCControl = require('../index')
 
 const run = async () => {
-  const vid = parseInt(process.argv[2]) || 0
+  const deviceAddress = parseInt(process.argv[2]) || 0
 
   const cam = new UVCControl({
-    vid: vid
+    deviceAddress: deviceAddress
   })
 
-  if (cam.device.deviceDescriptor.idVendor !== vid) console.error(`Input vendor ID (${vid}) does not match device vendor ID (${cam.device.deviceDescriptor.idVendor})`)
+  if (cam.device.deviceAddress !== deviceAddress) console.error(`Input device address (${deviceAddress}) does not match device address (${cam.device.deviceAddress})`)
 
   console.log(cam)
 
